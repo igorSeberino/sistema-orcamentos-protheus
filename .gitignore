@@ -1,0 +1,9 @@
+# Artefatos de compilação / VS Code TDS
+*.ppo
+*.erx
+*.log
+.vscode/servers.json
+.vscode/launch.json
+# Sistema
+Thumbs.db
+desktop.ini
