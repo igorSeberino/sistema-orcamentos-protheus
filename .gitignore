@@ -2,8 +2,8 @@
 *.ppo
 *.erx
 *.log
-.vscode/servers.json
-.vscode/launch.json
+.vscode
+.github
 # Sistema
 Thumbs.db
 desktop.ini
