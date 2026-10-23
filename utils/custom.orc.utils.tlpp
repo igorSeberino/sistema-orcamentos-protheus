@@ -1,0 +1,162 @@
+#include "totvs.ch"
+#include "fwmvcdef.ch"
+
+namespace custom.orc.utils
+
+/*/{Protheus.doc} ModelActivate
+	Ponto de ativacao do Model (SetActivate) do cadastro de Áreas (ZB1).
+	Executado ao ativar o formulario; na operacao de INCLUIR, gera o
+	codigo sequencial do produto (ZB1_COD) via GetSXENum, garantindo que
+	o codigo nao esteja em uso (checagem via CodExiste) antes de
+	gravar o valor no Model.
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 22/10/2026
+
+	@param oModel
+
+	@see ZA1CodExiste
+/*/
+User Function ModelActivate( oModel, cAlias )
+
+    Local cCodigo
+    Local cCodField := cAlias + "_COD"
+    Local cModel := cAlias + "MASTER"
+
+    If oModel:GetOperation() == MODEL_OPERATION_INSERT
+
+        cCodigo := GetSXENum( cAlias, cCodField )
+
+        Do While U_CodExiste(cCodigo, cAlias)
+
+            cCodigo := GetSXENum( cAlias, cCodField )
+            
+        EndDo
+
+        oModel:SetValue( cModel, cCodField, cCodigo )
+
+    EndIf
+
+Return 
+
+/*/{Protheus.doc} CodExiste
+	Verifica se ja existe produto (nao deletado) com o codigo
+	informado.
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 22/10/2026
+
+	@param cCod, character
+
+	@return logical, .T.=Existe, .F.=Nao Existe
+/*/
+User Function CodExiste( cCod, cAlias )
+
+    Local lExiste := .F.
+    Local cCodField := cAlias + '_COD'
+    Local cCodFieldSearch := cAlias + "." + cCodField + " = "
+
+    Local cQuery := U_QuerySet( cAlias, { cCodField }, { { cCodFieldSearch, cCod } } )
+
+    Local cAliasQry := MPSysOpenQuery(cQuery)
+
+    lExiste := !(cAliasQry)->(EoF())
+
+    (cAliasQry)->(dbCloseArea())
+
+Return lExiste
+
+/*/{Protheus.doc} QuerySet
+	Monta uma query de acordo com os parametros passados.
+    Protegida contra SQL Injection com FWPreparedStatement
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 22/10/2026
+
+	@param cAlias, character
+    
+    @param aParamsSelect, array, parametros que deseja como retorno
+
+    @param aParamsWhere, array, parametros que deseja filtrar,
+    formato { {Campo + Operador}, {Valor} }
+    exemplo [ {ZA1.ZA1_COD =}, {000004} ]
+
+	@return cQueryRet, query montada
+/*/
+User Function QuerySet( cAlias, aParamsSelect, aParamsWhere )
+
+    Local oStmt := FWPreparedStatement():New()
+    Local cQueryBase as character
+    Local cQueryRet as character
+    Local nI as integer
+
+    // Começa a montar a query
+    cQueryBase := " SELECT "
+
+    // Adiciona parâmetros conforme passado
+    // no array, de forma dinâmica
+    For nI := 1 to Len(aParamsSelect)
+        If nI != 1
+            cQueryBase += ", "
+        EndIf
+        cQueryBase += aParamsSelect[nI]
+    Next nI
+
+    // Adição dinâmica de table
+    cQueryBase += " FROM " + RetSQLName(cAlias) + " " +  cAlias
+
+    // Adiciona parâmetros conforme passado
+    // no array, de forma dinâmica
+    If Len(aParamsWhere) > 0
+        For nI := 1 to Len(aParamsWhere)
+            If nI == 1
+                cQueryBase += " WHERE " + cAlias + ".D_E_L_E_T_ = ' ' "
+                cQueryBase += " AND " + aParamsWhere[nI][1] + " ? "
+            Else
+                cQueryBase += " AND " + aParamsWhere[nI][1] + " ? "
+            EndIf
+        Next nI
+    // Garante o filtro de itens deletados
+    // mesmo sem parâmetros de busca
+    Else   
+        cQueryBase += " WHERE " + cAlias + ".D_E_L_E_T_ = ' ' "
+    EndIf
+
+    oStmt:SetQuery(cQueryBase)
+
+    // Preenchimento dinâmico dos parâmetros
+    // de busca    
+    For nI := 1 to Len(aParamsWhere)
+
+        If ValType(aParamsWhere[nI][2]) == "C"
+
+            oStmt:SetString(nI, aParamsWhere[nI][2])
+
+        ElseIf ValType(aParamsWhere[nI][2]) == "N"
+
+            oStmt:SetNumeric(nI, aParamsWhere[nI][2])
+
+        ElseIf ValType(aParamsWhere[nI][2]) == "D"
+
+            oStmt:SetDate(nI, aParamsWhere[nI][2])
+
+        ElseIf ValType(aParamsWhere[nI][2]) == "L"
+
+            oStmt:SetLogical(nI, aParamsWhere[nI][2])
+
+        EndIf
+
+    Next nI
+
+    cQueryRet := oStmt:GetFixQuery()
+
+Return cQueryRet
