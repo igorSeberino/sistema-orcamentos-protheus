@@ -1,0 +1,112 @@
+#include "totvs.ch"
+#include "fwmvcdef.ch"
+
+namespace custom.orc.cadastro.aprovadores
+using namespace custom.orc.utils
+
+#define NAMESPACE "custom.orc.cadastro.aprovadores"
+
+/*/{Protheus.doc} ZORCA03
+	Cadastro de Aprovadores (ZB3) - tela browse
+
+	@type function
+
+	@author igor.seberino
+	
+	@since 23/10/2026
+/*/
+User Function ZORCA03()
+
+    Local oBrowse := FWMarkBrowse():New()
+
+    oBrowse:SetAlias("ZB3")
+    oBrowse:SetDescription("Cadastro de Aprovadores")
+
+    // oBrowse:AddLegend(/* Campo = Valor */,/* Cor */,/* Legenda */)
+    oBrowse:AddLegend("ZB3_ATIVO == '1'", "GREEN", "Ativa")
+    oBrowse:AddLegend("ZB3_ATIVO == '2'", "RED", "Inativa")
+
+    oBrowse:Activate()
+
+Return
+
+/*/{Protheus.doc} ModelDef
+	Regras de negocio e estrutura de dados do cadastro de aprovadores (ZB3)
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 23/10/2026
+
+	@return object, o model MVC (MPFormModel)
+/*/
+User Function ModelDef()
+    Local oModel     := MPFormModel():New("ZORCA03M")
+    Local oStruZB3   := FWFormStruct(1, "ZB3")
+
+    // Monta o trigger de busca do usuário
+    Local aTrigger := FwStruTrigger( "ZB3_USER", "ZB3_NOME", 'FWGetUserName(M->ZB3_USER)', .F., "", 0,,, "01" )
+
+    // Adiciona o trigger ao struct da ZB3
+    oStruZB3:AddTrigger( aTrigger[1], aTrigger[2], aTrigger[3], aTrigger[4] )
+
+    oModel:AddFields("ZB3MASTER", /*cOwner*/, oStruZB3)
+    oModel:SetDescription('Modelo de Aprovadores')
+
+    oModel:SetPrimaryKey({'ZB3_FILIAL', 'ZB3_USER'})
+    oModel:GetModel('ZB3MASTER'):SetDescription('Modelo de Aprovadores')
+
+Return oModel
+
+
+/*/{Protheus.doc} ViewDef
+	Layout visual do cadastro de aprovadores (ZB3)
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 23/10/2026
+
+	@return object, a view MVC (FWFormView)
+/*/
+User Function ViewDef()
+
+    Local oModel := FWLoadModel(NAMESPACE + ".ZORCA03")
+    Local oStruZB3 := FWFormStruct(2, "ZB3")
+    Local oView := FWFormView():New()
+    
+    oView:SetModel( oModel )
+    oView:AddField( 'VIEW_ZB3', oStruZB3, 'ZB3MASTER' )
+
+    oView:CreateHorizontalBox( 'TELA', 100 )
+    oView:SetOwnerView( 'VIEW_ZB3', 'TELA' )
+
+Return oView
+
+/*/{Protheus.doc} MenuDef
+	Acoes disponiveis no cadastro de aprovadores (ZB3)
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 23/10/2026
+
+	@return array, itens de menu
+/*/
+User Function MenuDef()
+
+    Local aRotina := {}
+    //Define a chamada das actions do menu 
+    Local cActionString := FormatStr("VIEWDEF.%c.ZORCA03", NAMESPACE)
+
+    ADD OPTION aRotina Title 'Visualizar' Action cActionString OPERATION 2 ACCESS 0
+	ADD OPTION aRotina Title 'Incluir' Action cActionString OPERATION 3 ACCESS 0
+	ADD OPTION aRotina Title 'Alterar' Action cActionString OPERATION 4 ACCESS 0
+	ADD OPTION aRotina Title 'Excluir' Action cActionString OPERATION 5 ACCESS 0
+	ADD OPTION aRotina Title 'Imprimir' Action cActionString OPERATION 8 ACCESS 0
+	ADD OPTION aRotina Title 'Copiar' Action cActionString OPERATION 9 ACCESS 0
+
+Return aRotina
