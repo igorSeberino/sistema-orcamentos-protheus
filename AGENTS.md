@@ -2,14 +2,13 @@
 
 Projeto de treinamento MVC em TLPP no Protheus (tabelas ZB1–ZB7, rotinas ZORCA01–07 e ZORCR01). A fonte da verdade é `docs/especificacao-tecnica.md`; o `README.md` resume estrutura e rotinas.
 
-## REGRA PRINCIPAL: NÃO ESCREVER CÓDIGO
+## REGRA PRINCIPAL: NÃO MEXER NOS FONTES
 
-O desenvolvedor vai usar IA neste projeto **apenas para consulta**. O objetivo é ele aprender MVC fazendo.
+O desenvolvedor usa a IA neste projeto **para consulta**. O objetivo é ele aprender MVC fazendo: quem escreve nos fontes é ele.
 
-- NÃO criar, editar, completar ou gerar arquivos `.tlpp`, `.th`, `.prw` ou qualquer fonte em `src/`.
-- NÃO entregar trechos de código prontos para colar (ModelDef, ViewDef, MenuDef, validações, queries etc.), nem "só um exemplo" da rotina do projeto.
-- NÃO gerar scripts de dicionário (SX2/SX3/SIX/SXB/SX6) nem roteiros de teste preenchidos.
-- Mesmo que o pedido pareça pedir código, responder com explicação e apontar para a documentação; se ele quiser código, que peça explicitamente e saiba que está fugindo da regra.
+- NÃO criar, editar ou completar arquivos `.tlpp`, `.th`, `.prw` ou qualquer fonte do repositório (`Fonts/`, `utils/` etc.).
+- Exemplos de código **no chat** são permitidos e bem-vindos quando ajudam: trecho pronto, baseado no código real do projeto (funções do `utils`, namespaces), com a fonte TDN e o que precisa ser testado no ambiente. Não enrolar nem recusar: o dev adapta e cola.
+- NÃO gerar scripts de dicionário (SX2/SX3/SIX/SXB/SX6); configuração de dicionário vai como passo a passo no SIGACFG, com os nomes de campo da tela (ex.: "Expressão", "Retorno"), não os códigos da SXB (tipo 2, tipo 5).
 
 O que PODE fazer:
 - Explicar conceitos MVC/TLPP (FWFormStruct, AddGrid, SetRelation, LoadValue x SetValue, FWSaveRows, FWLoadModel etc.) e indicar a página do TDN.

@@ -103,7 +103,7 @@ Carga inicial sugerida para ZB2: 001 Ponto de Entrada, 002 API REST, 003 Tela MV
 | Campo | Tipo | Tam | Título | Regra |
 | :---- | :---- | :---- | :---- | :---- |
 | ZB4\_FILIAL | C | filial | Filial |  |
-| ZB4\_NUM | C | 6 | Número | Numeração automática (SXE/SXF), não editável |
+| ZB4\_COD | C | 6 | Número | Numeração automática (SXE/SXF), não editável |
 | ZB4\_REV | C | 2 | Revisão | Padrão 01, não editável |
 | ZB4\_TITULO | C | 60 | Título | Obrigatório |
 | ZB4\_CLIENT | C | 6 | Cliente | Obrigatório, F3 SA1 |
@@ -127,7 +127,7 @@ Carga inicial sugerida para ZB2: 001 Ponto de Entrada, 002 API REST, 003 Tela MV
 | Campo | Tipo | Tam | Título | Regra |
 | :---- | :---- | :---- | :---- | :---- |
 | ZB5\_FILIAL | C | filial | Filial |  |
-| ZB5\_NUM | C | 6 | Número | Relação com ZB4 (não aparece na tela) |
+| ZB5\_COD | C | 6 | Número | Relação com ZB4 (não aparece na tela) |
 | ZB5\_REV | C | 2 | Revisão | Relação com ZB4 (não aparece na tela) |
 | ZB5\_ITEM | C | 3 | Item | Incremental, único no orçamento |
 | ZB5\_DEMAND | C | 80 | Demanda | Obrigatório |
@@ -142,7 +142,7 @@ Carga inicial sugerida para ZB2: 001 Ponto de Entrada, 002 API REST, 003 Tela MV
 | Campo | Tipo | Tam | Título | Regra |
 | :---- | :---- | :---- | :---- | :---- |
 | ZB6\_FILIAL | C | filial | Filial |  |
-| ZB6\_NUM, ZB6\_REV, ZB6\_ITEM | C | 6, 2, 3 |  | Relação com ZB5 (não aparecem na tela) |
+| ZB6\_COD, ZB6\_REV, ZB6\_ITEM | C | 6, 2, 3 |  | Relação com ZB5 (não aparecem na tela) |
 | ZB6\_SUB | C | 3 | Sub | Incremental, único no item |
 | ZB6\_ATIV | C | 200 | Atividade | Obrigatório |
 | ZB6\_DDOC / ZB6\_HDOC | N | 7,4 / 7,2 | Doc. Dias / Doc. Horas | ≥ 0, conversão RN02 |
@@ -157,7 +157,7 @@ Carga inicial sugerida para ZB2: 001 Ponto de Entrada, 002 API REST, 003 Tela MV
 | Campo | Tipo | Tam | Título | Regra |
 | :---- | :---- | :---- | :---- | :---- |
 | ZB7\_FILIAL | C | filial | Filial |  |
-| ZB7\_NUM, ZB7\_REV | C | 6, 2 |  | Relação com ZB4 |
+| ZB7\_COD, ZB7\_REV | C | 6, 2 |  | Relação com ZB4 |
 | ZB7\_SEQ | C | 3 | Sequência | Sequencial por orçamento/revisão |
 | ZB7\_ACAO | C | 1 | Ação | Combo 1=Enviado;2=Aprovado;3=Reprovado;4=Estornado |
 | ZB7\_USER | C | 6 | Usuário | Usuário que executou a ação |
@@ -173,13 +173,13 @@ Carga inicial sugerida para ZB2: 001 Ponto de Entrada, 002 API REST, 003 Tela MV
 | ZB1, ZB2 | 1 | FILIAL \+ COD |
 | ZB1, ZB2 | 2 | FILIAL \+ DESC |
 | ZB3 | 1 | FILIAL \+ USER |
-| ZB4 | 1 | FILIAL \+ NUM \+ REV |
-| ZB4 | 2 | FILIAL \+ CLIENT \+ LOJA \+ NUM \+ REV |
+| ZB4 | 1 | FILIAL \+ COD \+ REV |
+| ZB4 | 2 | FILIAL \+ CLIENT \+ LOJA \+ COD \+ REV |
 | ZB4 | 3 | FILIAL \+ TICKET |
-| ZB5 | 1 | FILIAL \+ NUM \+ REV \+ ITEM |
+| ZB5 | 1 | FILIAL \+ COD \+ REV \+ ITEM |
 | ZB5 | 2 | FILIAL \+ DEFIN |
-| ZB6 | 1 | FILIAL \+ NUM \+ REV \+ ITEM \+ SUB |
-| ZB7 | 1 | FILIAL \+ NUM \+ REV \+ SEQ |
+| ZB6 | 1 | FILIAL \+ COD \+ REV \+ ITEM \+ SUB |
+| ZB7 | 1 | FILIAL \+ COD \+ REV \+ SEQ |
 
 ### **3.9 Parâmetro (SX6)**
 
@@ -468,7 +468,7 @@ A regra que vale para todas as etapas: **toda regra de negócio fica no modelo, 
 | :---- | :---- |
 | Nome do arquivo | custom.\<siglamodulo\>.\<indicativo\>.\<descricao\>.tlpp, tudo em minúsculas. custom é fixo; a sigla do módulo deste sistema é orc; o indicativo é o processo (cadastro, orcamento, consulta, relatorio, util); a descrição é a proposta do fonte. Ex.: custom.orc.cadastro.areas.tlpp. |
 | Namespace | Igual ao nome do arquivo sem a extensão (ex.: namespace custom.orc.cadastro.areas). Assim cada fonte tem o próprio namespace e as funções MVC (ModelDef, ViewDef, MenuDef) nunca colidem entre fontes. |
-| Funções MVC em TLPP | MenuDef, ModelDef e ViewDef deixam de ser Static Function e passam a ser User Function dentro do namespace. Em FWLoadModel, FWLoadView e no ACTION "VIEWDEF.\<...\>" do menu, informar o namespace completo mais o nome da função principal ([TDN](https://tdn.totvs.com/display/framework/Suporte+a+TLPP+no+Protheus)). |
+| Funções MVC em TLPP | MenuDef, ModelDef e ViewDef deixam de ser user Function e passam a ser User Function dentro do namespace. Em FWLoadModel, FWLoadView e no ACTION "VIEWDEF.\<...\>" do menu, informar o namespace completo mais o nome da função principal ([TDN](https://tdn.totvs.com/display/framework/Suporte+a+TLPP+no+Protheus)). |
 | Função principal | main em todos os fontes (ex.: custom.orc.cadastro.areas.main), que é o que vai no menu do SIGACFG. |
 | ID do modelo | Código curto \+ M (ex.: ZORCA01M), diferente do nome da função principal, porque ele também vira o nome do ponto de entrada MVC. IDs de submodelo no padrão ZB4MASTER, ZB5DETAIL. |
 | Endpoints REST | Se o sistema expuser API no futuro: /api/\<siglamodulo\>/\<indicativo\>/\<descricao\>, ex.: /api/orc/consulta/historico. O fonte do endpoint segue a mesma regra de arquivo. |

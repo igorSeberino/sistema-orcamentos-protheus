@@ -33,7 +33,7 @@ Return
 /*/{Protheus.doc} ModelDef
 	Regras de negocio e estrutura de dados do cadastro de Definições (ZB2)
 
-	@type static function
+	@type user function
 
 	@author igor.seberino
 
@@ -59,7 +59,7 @@ Return oModel
 /*/{Protheus.doc} ViewDef
 	Layout visual do cadastro de Definições (ZB2)
 
-	@type static function
+	@type user function
 
 	@author igor.seberino
 
@@ -84,7 +84,7 @@ Return oView
 /*/{Protheus.doc} MenuDef
 	Acoes disponiveis no cadastro de Definições (ZB2)
 
-	@type static function
+	@type user function
 
 	@author igor.seberino
 

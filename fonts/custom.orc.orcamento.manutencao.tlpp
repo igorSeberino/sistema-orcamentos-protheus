@@ -1,0 +1,184 @@
+#include "totvs.ch"
+#include "tlpp-core.th"
+#include "fwmvcdef.ch"
+
+namespace custom.orc.orcamento.manutencao
+using namespace custom.orc.utils
+
+#define NAMESPACE "custom.orc.orcamento.manutencao"
+
+/*/{Protheus.doc} ZORCA04
+	Orçamentos (browse e manutenção) (ZB4) - tela browse
+
+	@type function
+
+	@author igor.seberino
+	
+	@since 25/10/2026
+/*/
+User Function ZORCA04()
+
+    Local oBrowse := FWMarkBrowse():New()
+
+    oBrowse:SetAlias("ZB4")
+    oBrowse:SetDescription("Orçamentos (browse e manutenção)")
+
+    // oBrowse:AddLegend(/* Campo = Valor */,/* Cor */,/* Legenda */)
+
+    oBrowse:Activate()
+
+Return
+
+/*/{Protheus.doc} ModelDef
+	Regras de negocio e estrutura de dados do Orçamentos (browse e manutenção) (ZB4)
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 25/10/2026
+
+	@return object, o model MVC (MPFormModel)
+/*/
+User Function ModelDef()
+
+    Local oModel := MPFormModel():New("ZORCA04M")
+    Local oStruZB4 := FWFormStruct(1, "ZB4")
+
+	Local aTrigger := FwStruTrigger( "ZB4_LOJA", "ZB4_NOMCLI", 'Posicione("SA1", 1, xFilial("SA1") + M->ZB4_CLIENT + M->ZB4_LOJA, "A1_NOME")', .F., "", 0,,, "01" )
+
+	oStruZB4:AddTrigger( aTrigger[1], aTrigger[2], aTrigger[3], aTrigger[4] )
+
+    oModel:AddFields("ZB4MASTER", /*cOwner*/, oStruZB4)
+    oModel:SetDescription('Modelo de Orçamentos')
+
+    oModel:SetPrimaryKey({'ZB4_FILIAL', 'ZB4_COD'})
+    oModel:GetModel('ZB4MASTER'):SetDescription('Modelo de Orçamentos')
+
+    oModel:SetActivate({ |oModel| U_ModelActivate( @oModel, "ZB4" ) })
+
+Return oModel
+
+/*/{Protheus.doc} ViewDef
+	Layout visual do Orçamentos (browse e manutenção) (ZB4)
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 25/10/2026
+
+	@return object, a view MVC (FWFormView)
+/*/
+User Function ViewDef()
+
+    Local oModel := FWLoadModel(NAMESPACE + ".ZORCA04")
+    Local oStruZB4 := FWFormStruct(2, "ZB4")
+    Local oView := FWFormView():New()
+    
+	oStruZB4:RemoveField("ZB4_HRDNUM")
+	oStruZB4:RemoveField("ZB4_TTHRNM")
+
+    oView:SetModel( oModel )
+    oView:AddField( 'VIEW_ZB4', oStruZB4, 'ZB4MASTER' )
+
+    oView:CreateHorizontalBox( 'TELA', 100 )
+    oView:SetOwnerView( 'VIEW_ZB4', 'TELA' )
+
+Return oView
+
+/*/{Protheus.doc} MenuDef
+	Acoes disponiveis no Orçamentos (browse e manutenção) (ZB4)
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 25/10/2026
+
+	@return array, itens de menu
+/*/
+User Function MenuDef()
+
+    Local aRotina := {}
+    //Define a chamada das actions do menu 
+    Local cActionString := FormatStr("VIEWDEF.%c.ZORCA04", NAMESPACE)
+
+    ADD OPTION aRotina Title 'Visualizar' Action cActionString OPERATION 2 ACCESS 0
+	ADD OPTION aRotina Title 'Incluir' Action cActionString OPERATION 3 ACCESS 0
+	ADD OPTION aRotina Title 'Alterar' Action cActionString OPERATION 4 ACCESS 0
+	ADD OPTION aRotina Title 'Excluir' Action cActionString OPERATION 5 ACCESS 0
+	ADD OPTION aRotina Title 'Imprimir' Action cActionString OPERATION 8 ACCESS 0
+	ADD OPTION aRotina Title 'Copiar' Action cActionString OPERATION 9 ACCESS 0
+
+Return aRotina
+
+/*/{Protheus.doc} VldData
+	Valida se a data de validade é posterior à data de criação
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 26/10/2026
+
+	@return logical
+/*/
+User Function VldData()
+
+	Local lRet := .T.
+	Local dDataInit := M->ZB4_DATA
+	Local dDataValid := M->ZB4_VALID
+
+	If dDataInit > dDataValid
+		Help(, , "HELP", "", "Validade não pode ser anterior à data de abertura do orçamento", 1, 0)
+		lRet := .F.
+	EndIf
+
+Return lRet
+
+/*/{Protheus.doc} HoursToNum
+	Converte texto hh:mm em horas decimais. Ex.: "08:30" -> 8.5
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 26/10/2026
+
+	@return logical
+/*/
+User Function HoursToNum() 
+
+	Local oModel       := FWModelActive()
+	Local oModelZB4    := oModel:GetModel("ZB4MASTER")
+
+	Local nHourNumeric as numeric
+	Local nHH as numeric
+	Local nMM as numeric
+	Local lRet := .F.
+
+	// Captura os campos de hora
+	Local cHour := AllTrim(M->ZB4_HRDIA)
+
+	// Captura hora e minuto do campo
+	nHH := Val( Left( cHour, 2 ) )
+	nMM := Val( Right( cHour , 2 ) )
+
+	// Converte caracter para numérico
+	nHourNumeric := Round( nHH + ( nMM / 60 ), 2 )
+
+	// Regra de negócio (Min 0,01, Máx 24)
+	If nHourNumeric >= 0.01 .And. nHourNumeric <= 24
+
+		lRet := .T.
+
+		oModelZB4:SetValue("ZB4_HRDNUM", nHourNumeric)
+
+	Else
+
+		Help(, , "HELP", "", "O máximo são 24 horas", 1, 0)
+
+	EndIf
+
+Return lRet

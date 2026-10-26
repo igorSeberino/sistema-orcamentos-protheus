@@ -10,7 +10,7 @@ namespace custom.orc.utils
 	o codigo nao esteja em uso (checagem via CodExiste) antes de
 	gravar o valor no Model.
 
-	@type static function
+	@type user function
 
 	@author igor.seberino
 
@@ -46,7 +46,7 @@ Return
 	Verifica se ja existe produto (nao deletado) com o codigo
 	informado.
 
-	@type static function
+	@type user function
 
 	@author igor.seberino
 
