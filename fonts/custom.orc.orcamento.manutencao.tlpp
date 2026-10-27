@@ -24,6 +24,11 @@ User Function ZORCA04()
     oBrowse:SetDescription("Orçamentos (browse e manutenção)")
 
     // oBrowse:AddLegend(/* Campo = Valor */,/* Cor */,/* Legenda */)
+	oBrowse:AddLegend("ZB4_STATUS = '1'", "WHITE", "Rascunho")
+	oBrowse:AddLegend("ZB4_STATUS = '2'", "YELLOW", "Enviado")
+	oBrowse:AddLegend("ZB4_STATUS = '3'", "GREEN", "Aprovado")
+	oBrowse:AddLegend("ZB4_STATUS = '4'", "RED", "Reprovado")
+
 
     oBrowse:Activate()
 
@@ -44,16 +49,29 @@ User Function ModelDef()
 
     Local oModel := MPFormModel():New("ZORCA04M")
     Local oStruZB4 := FWFormStruct(1, "ZB4")
+	Local oStruZB5 := FWFormStruct(1, "ZB5")
 
-	Local aTrigger := FwStruTrigger( "ZB4_LOJA", "ZB4_NOMCLI", 'Posicione("SA1", 1, xFilial("SA1") + M->ZB4_CLIENT + M->ZB4_LOJA, "A1_NOME")', .F., "", 0,,, "01" )
+	// Monta trigger de ZB4
+	Local aTriggerZB4 := FwStruTrigger( "ZB4_LOJA", "ZB4_NOMCLI", 'Posicione("SA1", 1, xFilial("SA1") + M->ZB4_CLIENT + M->ZB4_LOJA, "A1_NOME")', .F., "", 0,,, "01" )
 
-	oStruZB4:AddTrigger( aTrigger[1], aTrigger[2], aTrigger[3], aTrigger[4] )
+	// Adiciona trigger à ZB4
+	oStruZB4:AddTrigger( aTriggerZB4[1], aTriggerZB4[2], aTriggerZB4[3], aTriggerZB4[4] )
 
     oModel:AddFields("ZB4MASTER", /*cOwner*/, oStruZB4)
+	oModel:AddGrid("ZB5DETAIL", "ZB4MASTER", oStruZB5)
     oModel:SetDescription('Modelo de Orçamentos')
 
-    oModel:SetPrimaryKey({'ZB4_FILIAL', 'ZB4_COD'})
+	// Define relação entre ZB4 e ZB5
+	oModel:SetRelation("ZB5DETAIL", { ;
+        {"ZB5_FILIAL", "xFilial('ZB5')"}, ;
+        {"ZB5_COD"   , "ZB4_COD"}, ;
+        {"ZB5_REV"   , "ZB4_REV"}  ;
+    }, ZB5->(IndexKey(1)))
+
     oModel:GetModel('ZB4MASTER'):SetDescription('Modelo de Orçamentos')
+	oModel:GetModel("ZB5DETAIL"):SetUniqueLine({"ZB5_ITEM"})
+
+	oModel:SetPrimaryKey({ "ZB4_FILIAL", "ZB4_COD", "ZB4_REV" })
 
     oModel:SetActivate({ |oModel| U_ModelActivate( @oModel, "ZB4" ) })
 
@@ -74,16 +92,27 @@ User Function ViewDef()
 
     Local oModel := FWLoadModel(NAMESPACE + ".ZORCA04")
     Local oStruZB4 := FWFormStruct(2, "ZB4")
+	Local oStruZB5 := FWFormStruct(2, "ZB5")
     Local oView := FWFormView():New()
-    
+
+	// Esconde campos do usuário (controle interno)
 	oStruZB4:RemoveField("ZB4_HRDNUM")
 	oStruZB4:RemoveField("ZB4_TTHRNM")
+	oStruZB5:RemoveField("ZB5_COD")
+	oStruZB5:RemoveField("ZB5_REV")
+	oStruZB5:RemoveField("ZB5_TTHRNM")
 
     oView:SetModel( oModel )
     oView:AddField( 'VIEW_ZB4', oStruZB4, 'ZB4MASTER' )
+	oView:AddGrid('VIEW_ZB5', oStruZB5, 'ZB5DETAIL')
 
-    oView:CreateHorizontalBox( 'TELA', 100 )
+    oView:CreateHorizontalBox( 'TELA', 70 )
+	oView:CreateHorizontalBox( 'TELA_ZB5', 30 )
     oView:SetOwnerView( 'VIEW_ZB4', 'TELA' )
+	oView:SetOwnerView( 'VIEW_ZB5', 'TELA_ZB5' )
+
+	// Define o código dos itens como incremental por orçamento
+	oView:AddIncrementField("VIEW_ZB5", "ZB5_ITEM")
 
 Return oView
 
