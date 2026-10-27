@@ -6,6 +6,7 @@ namespace custom.orc.orcamento.manutencao
 using namespace custom.orc.utils
 
 #define NAMESPACE "custom.orc.orcamento.manutencao"
+#define UTILS "custom.orc.utils"
 
 /*/{Protheus.doc} ZORCA04
 	Orçamentos (browse e manutenção) (ZB4) - tela browse
@@ -50,12 +51,18 @@ User Function ModelDef()
     Local oModel := MPFormModel():New("ZORCA04M")
     Local oStruZB4 := FWFormStruct(1, "ZB4")
 	Local oStruZB5 := FWFormStruct(1, "ZB5")
+	Local aTriggersZB4 := {}
+	Local nI as numeric
 
 	// Monta trigger de ZB4
-	Local aTriggerZB4 := FwStruTrigger( "ZB4_LOJA", "ZB4_NOMCLI", 'Posicione("SA1", 1, xFilial("SA1") + M->ZB4_CLIENT + M->ZB4_LOJA, "A1_NOME")', .F., "", 0,,, "01" )
+	aAdd( aTriggersZB4, FwStruTrigger( "ZB4_LOJA", "ZB4_NOMCLI", 'Posicione("SA1", 1, xFilial("SA1") + M->ZB4_CLIENT + M->ZB4_LOJA, "A1_NOME")', .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB4, FwStruTrigger( "ZB4_HRDIA", "ZB4_HRDNUM", UTILS + '.U_HoursToNum(M->ZB4_HRDIA)', .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB4, FwStruTrigger( "ZB4_TOTHR", "ZB4_TTHRNM", UTILS + '.U_HoursToNum(M->ZB4_TOTHR)', .F., "", 0,,, "01" ) )
 
 	// Adiciona trigger à ZB4
-	oStruZB4:AddTrigger( aTriggerZB4[1], aTriggerZB4[2], aTriggerZB4[3], aTriggerZB4[4] )
+	For nI := 1 to Len(aTriggersZB4)
+		oStruZB4:AddTrigger( aTriggersZB4[nI][1], aTriggersZB4[nI][2], aTriggersZB4[nI][3], aTriggersZB4[nI][4] )
+	Next nI
 
     oModel:AddFields("ZB4MASTER", /*cOwner*/, oStruZB4)
 	oModel:AddGrid("ZB5DETAIL", "ZB4MASTER", oStruZB5)
@@ -166,48 +173,4 @@ User Function VldData()
 
 Return lRet
 
-/*/{Protheus.doc} HoursToNum
-	Converte texto hh:mm em horas decimais. Ex.: "08:30" -> 8.5
-
-	@type user function
-
-	@author igor.seberino
-
-	@since 26/10/2026
-
-	@return logical
-/*/
-User Function HoursToNum() 
-
-	Local oModel       := FWModelActive()
-	Local oModelZB4    := oModel:GetModel("ZB4MASTER")
-
-	Local nHourNumeric as numeric
-	Local nHH as numeric
-	Local nMM as numeric
-	Local lRet := .F.
-
-	// Captura os campos de hora
-	Local cHour := AllTrim(M->ZB4_HRDIA)
-
-	// Captura hora e minuto do campo
-	nHH := Val( Left( cHour, 2 ) )
-	nMM := Val( Right( cHour , 2 ) )
-
-	// Converte caracter para numérico
-	nHourNumeric := Round( nHH + ( nMM / 60 ), 2 )
-
-	// Regra de negócio (Min 0,01, Máx 24)
-	If nHourNumeric >= 0.01 .And. nHourNumeric <= 24
-
-		lRet := .T.
-
-		oModelZB4:SetValue("ZB4_HRDNUM", nHourNumeric)
-
-	Else
-
-		Help(, , "HELP", "", "O máximo são 24 horas", 1, 0)
-
-	EndIf
-
-Return lRet
+IIf( M->ZB4_HRDNUM <= 24 .And. M->ZB4_HRDNUM > 0, .T., ( Help( , , "HELP", "", "Horas devem ser menos que 24", 1, 0 ), .F. ) )

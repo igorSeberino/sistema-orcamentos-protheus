@@ -160,3 +160,51 @@ User Function QuerySet( cAlias, aParamsSelect, aParamsWhere )
     cQueryRet := oStmt:GetFixQuery()
 
 Return cQueryRet
+
+
+/*/{Protheus.doc} HoursToNum
+	Converte texto hh:mm em horas decimais. Ex.: "08:30" -> 8.5
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 27/10/2026
+
+	@return logical
+/*/
+User Function HoursToNum( cHour ) 
+
+	Local nHH as numeric
+	Local nMM as numeric
+    Local nValue as numeric
+
+	// Captura hora e minuto do campo
+	nHH := Val( Left( cHour, 2 ) )
+	nMM := Val( Right( cHour , 2 ) )
+
+	// Converte caracter para numérico
+	nValue := Round( nHH + ( nMM / 60 ), 2 )
+
+Return nValue
+
+/*/{Protheus.doc} NumToHours
+	Converte horas decimais em texto
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 27/10/2026
+
+	@return logical
+/*/
+User Function NumToHours( nValue ) 
+
+    Local cHour as character
+
+	Local nDecimais := nValue - Int(nValue)
+
+    cHour := StrZero(Int(nValue), 2) + ":" + StrZero(Round(nDecimais * 60, 0), 2)
+
+Return cHour
