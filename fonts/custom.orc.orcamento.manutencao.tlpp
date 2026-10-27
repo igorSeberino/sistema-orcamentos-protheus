@@ -172,5 +172,3 @@ User Function VldData()
 	EndIf
 
 Return lRet
-
-IIf( M->ZB4_HRDNUM <= 24 .And. M->ZB4_HRDNUM > 0, .T., ( Help( , , "HELP", "", "Horas devem ser menos que 24", 1, 0 ), .F. ) )
