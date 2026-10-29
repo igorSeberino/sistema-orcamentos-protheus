@@ -17,7 +17,7 @@ using namespace custom.orc.utils
 /*/
 User Function ZORCA03()
 
-    Local oBrowse := FWMarkBrowse():New()
+    Local oBrowse := FWMBrowse():New()
 
     oBrowse:SetAlias("ZB3")
     oBrowse:SetDescription("Cadastro de Aprovadores")
@@ -62,7 +62,7 @@ Return oModel
 /*/{Protheus.doc} ViewDef
 	Layout visual do cadastro de aprovadores (ZB3)
 
-	@type user function
+	@type user functionPOSICIONE( 'ZB2', 1, XFILIAL( 'ZB2' ) + M->ZB5_DEFIN, 'ZB2_DESC' )                                 
 
 	@author igor.seberino
 

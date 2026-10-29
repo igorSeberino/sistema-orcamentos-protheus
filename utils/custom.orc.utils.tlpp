@@ -2,6 +2,7 @@
 #include "fwmvcdef.ch"
 
 namespace custom.orc.utils
+using namespace custom.orc.orcamento.manutencao
 
 /*/{Protheus.doc} ModelActivate
 	Ponto de ativacao do Model (SetActivate) do cadastro de Áreas (ZB1).
@@ -178,9 +179,10 @@ User Function HoursToNum( cHour )
 	Local nHH as numeric
 	Local nMM as numeric
     Local nValue as numeric
+    Local nHourLength := Len(cHour) - 3
 
 	// Captura hora e minuto do campo
-	nHH := Val( Left( cHour, 2 ) )
+	nHH := Val( Left( cHour, nHourLength ) )
 	nMM := Val( Right( cHour , 2 ) )
 
 	// Converte caracter para numérico
@@ -199,12 +201,104 @@ Return nValue
 
 	@return logical
 /*/
-User Function NumToHours( nValue ) 
+User Function NumToHours( nValue, nTam ) 
 
     Local cHour as character
-
 	Local nDecimais := nValue - Int(nValue)
 
-    cHour := StrZero(Int(nValue), 2) + ":" + StrZero(Round(nDecimais * 60, 0), 2)
+    cHour := StrZero(Int(nValue), nTam - 3) + ":" + StrZero(Round(nDecimais * 60, 0), 2)
 
 Return cHour
+
+User Function HoursToDays( nValue )
+Return nValue / 8.5
+
+User Function TotalHrsCharSet( nTotal, cModel )
+
+	Local oModelActive := FWModelActive()
+    Local oModel := oModelActive:GetModel(cModel)
+	Local oStruct  := oModel:GetStruct()
+
+	Local cField := Left(cModel, 3) + "_TOTHR"
+
+	oStruct:SetProperty( cField, MODEL_FIELD_WHEN, { || .T. } )
+
+	oModel:SetValue( cField, U_NumToHours(nTotal, 10) )
+
+	oStruct:SetProperty( cField, MODEL_FIELD_WHEN, { || .F. } )
+
+Return .T.
+
+User Function OnHrDayChange( nHrDia )
+
+	Local oModel    := FWModelActive()
+	Local oModelZB5 as object
+	Local oModelZB6 as object
+	Local n1 as numeric
+	Local n2 as numeric
+    Local aSaveRows as array
+
+	If M->ZB4_TTHRNM > 0
+
+        aSaveRows := FWSaveRows()
+
+		oModelZB5 := oModel:GetModel("ZB5DETAIL")
+		oModelZB6 := oModel:GetModel("ZB6DETAIL")
+
+		If MsgYesNo("Deseja recalcular as horas a partir dos dias? Sim: recalcula as horas a partir dos dias. Não: mantém as horas e recalcula os dias")
+			// Valida os dias novamente
+
+			For n1 := 1 to oModelZB5:Length()
+
+				If !oModelZB5:IsDeleted(n1)
+
+                    oModelZB5:GoLine(n1)
+
+					For n2 := 1 to oModelZB6:Length()
+
+						If !oModelZB6:IsDeleted(n2)
+
+                            oModelZB6:GoLine(n2)
+
+                            U_VldDias( "ZB6_HDOC", oModelZB6:GetValue("ZB6_DDOC"), nHrDia )
+                            U_VldDias( "ZB6_HDEV", oModelZB6:GetValue("ZB6_DDEV"), nHrDia )
+                            U_VldDias( "ZB6_HANA", oModelZB6:GetValue("ZB6_DANA"), nHrDia )
+                            U_VldDias( "ZB6_HVAL", oModelZB6:GetValue("ZB6_DVAL"), nHrDia )
+
+						EndIf
+
+					Next n2
+
+				EndIf
+
+			Next n1
+
+		Else
+			// Valida as horas novamente
+
+			For n1 := 1 to oModelZB5:Length()
+
+				If !oModelZB5:IsDeleted(n1)
+
+					For n2 := 1 to oModelZB6:Length()
+
+						If !oModelZB6:IsDeleted(n2)
+
+							oModelZB6:SetValue("ZB6_HDOC", "M->ZB6_HDOC")
+							oModelZB6:SetValue("ZB6_HDEV", "M->ZB6_HDEV")
+							oModelZB6:SetValue("ZB6_HANA", "M->ZB6_HANA")
+							oModelZB6:SetValue("ZB6_HVAL", "M->ZB6_HVAL")
+
+						EndIf
+
+					Next n2
+
+				EndIf
+
+			Next n1
+
+		EndIf
+		
+	EndIf
+
+Return .T.

@@ -51,21 +51,13 @@ User Function ModelDef()
     Local oModel := MPFormModel():New("ZORCA04M")
     Local oStruZB4 := FWFormStruct(1, "ZB4")
 	Local oStruZB5 := FWFormStruct(1, "ZB5")
-	Local aTriggersZB4 := {}
-	Local nI as numeric
+	Local oStruZB6 := FWFormStruct(1, "ZB6")
 
-	// Monta trigger de ZB4
-	aAdd( aTriggersZB4, FwStruTrigger( "ZB4_LOJA", "ZB4_NOMCLI", 'Posicione("SA1", 1, xFilial("SA1") + M->ZB4_CLIENT + M->ZB4_LOJA, "A1_NOME")', .F., "", 0,,, "01" ) )
-	aAdd( aTriggersZB4, FwStruTrigger( "ZB4_HRDIA", "ZB4_HRDNUM", UTILS + '.U_HoursToNum(M->ZB4_HRDIA)', .F., "", 0,,, "01" ) )
-	aAdd( aTriggersZB4, FwStruTrigger( "ZB4_TOTHR", "ZB4_TTHRNM", UTILS + '.U_HoursToNum(M->ZB4_TOTHR)', .F., "", 0,,, "01" ) )
-
-	// Adiciona trigger à ZB4
-	For nI := 1 to Len(aTriggersZB4)
-		oStruZB4:AddTrigger( aTriggersZB4[nI][1], aTriggersZB4[nI][2], aTriggersZB4[nI][3], aTriggersZB4[nI][4] )
-	Next nI
+	U_TriggerSet( oStruZB4, oStruZB6 )
 
     oModel:AddFields("ZB4MASTER", /*cOwner*/, oStruZB4)
 	oModel:AddGrid("ZB5DETAIL", "ZB4MASTER", oStruZB5)
+	oModel:AddGrid("ZB6DETAIL", "ZB5DETAIL", oStruZB6)
     oModel:SetDescription('Modelo de Orçamentos')
 
 	// Define relação entre ZB4 e ZB5
@@ -75,8 +67,17 @@ User Function ModelDef()
         {"ZB5_REV"   , "ZB4_REV"}  ;
     }, ZB5->(IndexKey(1)))
 
+	// Define relação entre ZB5 e ZB6
+	oModel:SetRelation("ZB6DETAIL", { ;
+        {"ZB6_FILIAL" , "xFilial('ZB6')"}, ;
+        {"ZB6_COD"    , "ZB4_COD"}, ;
+        {"ZB6_REV"    , "ZB4_REV"},  ;
+		{"ZB6_ITEM"   , "ZB5_ITEM"}  ;
+    }, ZB6->(IndexKey(1)))
+
     oModel:GetModel('ZB4MASTER'):SetDescription('Modelo de Orçamentos')
-	oModel:GetModel("ZB5DETAIL"):SetUniqueLine({"ZB5_ITEM"})
+	oModel:GetModel("ZB5DETAIL"):SetUniqueLine( { "ZB5_ITEM" } )
+	oModel:GetModel("ZB6DETAIL"):SetUniqueLine( { "ZB6_SUB" } )
 
 	oModel:SetPrimaryKey({ "ZB4_FILIAL", "ZB4_COD", "ZB4_REV" })
 
@@ -100,26 +101,27 @@ User Function ViewDef()
     Local oModel := FWLoadModel(NAMESPACE + ".ZORCA04")
     Local oStruZB4 := FWFormStruct(2, "ZB4")
 	Local oStruZB5 := FWFormStruct(2, "ZB5")
+	Local oStruZB6 := FWFormStruct(2, "ZB6")
     Local oView := FWFormView():New()
 
 	// Esconde campos do usuário (controle interno)
-	oStruZB4:RemoveField("ZB4_HRDNUM")
-	oStruZB4:RemoveField("ZB4_TTHRNM")
-	oStruZB5:RemoveField("ZB5_COD")
-	oStruZB5:RemoveField("ZB5_REV")
-	oStruZB5:RemoveField("ZB5_TTHRNM")
+	U_RemoveFields( oStruZB4, oStruZB5, oStruZB6 )
 
     oView:SetModel( oModel )
     oView:AddField( 'VIEW_ZB4', oStruZB4, 'ZB4MASTER' )
-	oView:AddGrid('VIEW_ZB5', oStruZB5, 'ZB5DETAIL')
+	oView:AddGrid( 'VIEW_ZB5', oStruZB5, 'ZB5DETAIL' )
+	oView:AddGrid( 'VIEW_ZB6', oStruZB6, 'ZB6DETAIL' )
 
-    oView:CreateHorizontalBox( 'TELA', 70 )
-	oView:CreateHorizontalBox( 'TELA_ZB5', 30 )
+    oView:CreateHorizontalBox( 'TELA', 50 )
+	oView:CreateHorizontalBox( 'TELA_ZB5', 25 )
+	oView:CreateHorizontalBox( 'TELA_ZB6', 25 )
     oView:SetOwnerView( 'VIEW_ZB4', 'TELA' )
 	oView:SetOwnerView( 'VIEW_ZB5', 'TELA_ZB5' )
+	oView:SetOwnerView( 'VIEW_ZB6', 'TELA_ZB6' )
 
-	// Define o código dos itens como incremental por orçamento
+	// Define o código incrementais para ZB5 e ZB6
 	oView:AddIncrementField("VIEW_ZB5", "ZB5_ITEM")
+	oView:AddIncrementField("VIEW_ZB6", "ZB6_SUB")
 
 Return oView
 
@@ -172,3 +174,139 @@ User Function VldData()
 	EndIf
 
 Return lRet
+
+User Function TriggerSet( oStruZB4 as object, oStruZB6 as object )
+
+	Local aTriggersZB4 := {}
+	Local aTriggersZB6 := {}
+	Local nI as numeric
+
+	// Monta triggers de ZB4
+	aAdd( aTriggersZB4, FwStruTrigger( "ZB4_LOJA", "ZB4_NOMCLI", 'Posicione("SA1", 1, xFilial("SA1") + M->ZB4_CLIENT + M->ZB4_LOJA, "A1_NOME")', .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB4, FwStruTrigger( "ZB4_HRDIA", "ZB4_HRDNUM", UTILS + '.U_HoursToNum(M->ZB4_HRDIA)', .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB4, FwStruTrigger( "ZB4_TOTHR", "ZB4_TTHRNM", UTILS + '.U_HoursToNum(M->ZB4_TOTHR)', .F., "", 0,,, "01" ) )
+
+	// Triggers de ZB6 (Hora char p/ hora num)
+	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HDOC", "ZB6_HDOCNM", UTILS + ".U_HoursToNum(M->ZB6_HDOC)", .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HDEV", "ZB6_HDEVNM", UTILS + ".U_HoursToNum(M->ZB6_HDEV)", .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HANA", "ZB6_HANANM", UTILS + ".U_HoursToNum(M->ZB6_HANA)", .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HVAL", "ZB6_HVALNM", UTILS + ".U_HoursToNum(M->ZB6_HVAL)", .F., "", 0,,, "01" ) )
+
+	// ZB6 Cálculo horas totais
+	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HDOCNM", "ZB6_TTHRNM", NAMESPACE + ".U_ZB6CalcHrs()", .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HDEVNM", "ZB6_TTHRNM", NAMESPACE + ".U_ZB6CalcHrs()", .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HANANM", "ZB6_TTHRNM", NAMESPACE + ".U_ZB6CalcHrs()", .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HVALNM", "ZB6_TTHRNM", NAMESPACE + ".U_ZB6CalcHrs()", .F., "", 0,,, "01" ) )
+
+
+	// Adiciona triggers à ZB4
+	For nI := 1 to Len(aTriggersZB4)
+		oStruZB4:AddTrigger( aTriggersZB4[nI][1], aTriggersZB4[nI][2], aTriggersZB4[nI][3], aTriggersZB4[nI][4] )
+	Next nI
+
+	// Adiciona triggers à ZB6
+	For nI := 1 to Len(aTriggersZB6)
+		oStruZB6:AddTrigger( aTriggersZB6[nI][1], aTriggersZB6[nI][2], aTriggersZB6[nI][3], aTriggersZB6[nI][4] )
+	Next nI
+
+Return
+
+User Function VldHrs( cFieldDays )
+
+	Local oModel  := FWModelActive()
+	Local oModelZB6 := oModel:GetModel("ZB6DETAIL")
+    Local nDias  as numeric
+    Local nHoras as numeric
+
+    nHoras := &(ReadVar())
+    If nHoras < 0
+        Help( , , "	HELP", , "Horas não podem ser negativas.", 1, 0 )
+        Return .F.
+    EndIf
+
+    nDias := nHoras / FwFldGet("ZB4_HRDNUM")
+
+    oModelZB6:LoadValue( cFieldDays, nDias )
+	
+Return .T.
+
+User Function VldDias( cFieldHrs as character, nDias, nHrDia ) as logical
+
+    Local oModel  := FWModelActive()
+	Local oModelZB6 := oModel:GetModel("ZB6DETAIL")
+    Local cHoras as numeric
+
+	If Type("nDias") == "U" 
+		nDias := &(ReadVar())
+	EndIf
+
+	If Type("nHrDia") == "U"
+		nHrDia := FwFldGet("ZB4_HRDNUM")
+	EndIf
+
+    If nDias < 0
+        Help( , , "	HELP", , "Dias não podem ser negativos.", 1, 0 )
+        Return .F.
+    EndIf
+
+    cHoras := U_NumToHours(nDias * nHrDia, 8)
+
+    oModelZB6:SetValue( cFieldHrs, cHoras )
+
+Return .T.
+
+User Function ZB6CalcHrs()
+
+	Local nDoc := FwFldGet("ZB6_HDOCNM")
+	Local nDev := FwFldGet("ZB6_HDEVNM")
+	Local nAna := FwFldGet("ZB6_HANANM")
+	Local nVal := FwFldGet("ZB6_HVALNM")
+
+	Local nTotal := nDoc + nDev + nAna + nVal
+
+Return nTotal
+
+User Function CalcHrsRows( cModelCount, cFieldCount, cModel, cField )
+
+	Local oModel := FWModelActive()
+	Local oGrid := oModel:GetModel(cModelCount)
+
+	Local nTotal as numeric
+	Local nI as numeric
+
+	For nI := 1 to oGrid:Length()
+
+		If !oGrid:IsDeleted(nI)
+
+			nTotal := nTotal + oGrid:GetValue(cFieldCount, nI)
+
+		EndIf
+
+	Next nI
+
+	oModel:GetModel(cModel):SetValue(cField, nTotal)
+
+Return .T.
+
+User Function RemoveFields( oStruZB4, oStruZB5, oStruZB6 )
+
+	// ZB4
+	oStruZB4:RemoveField("ZB4_HRDNUM")
+	oStruZB4:RemoveField("ZB4_TTHRNM")
+
+	// ZB5
+	oStruZB5:RemoveField("ZB5_COD")
+	oStruZB5:RemoveField("ZB5_REV")
+	oStruZB5:RemoveField("ZB5_TTHRNM")
+
+	// ZB6
+	oStruZB6:RemoveField("ZB6_COD")
+	oStruZB6:RemoveField("ZB6_REV")
+	oStruZB6:RemoveField("ZB6_ITEM")
+	oStruZB6:RemoveField("ZB6_TTHRNM")
+	oStruZB6:RemoveField("ZB6_HDOCNM")
+	oStruZB6:RemoveField("ZB6_HDEVNM")
+	oStruZB6:RemoveField("ZB6_HANANM")
+	oStruZB6:RemoveField("ZB6_HVALNM")
+
+Return .T.

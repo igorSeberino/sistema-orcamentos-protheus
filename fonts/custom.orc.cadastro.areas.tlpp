@@ -17,7 +17,7 @@ using namespace custom.orc.utils
 /*/
 User Function ZORCA01()
 
-    Local oBrowse := FWMarkBrowse():New()
+    Local oBrowse := FWMBrowse():New()
 
     oBrowse:SetAlias("ZB1")
     oBrowse:SetDescription("Cadastro de Áreas")
