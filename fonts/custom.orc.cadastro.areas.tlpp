@@ -101,8 +101,37 @@ User Function MenuDef()
     ADD OPTION aRotina Title 'Visualizar' Action cActionString OPERATION 2 ACCESS 0
 	ADD OPTION aRotina Title 'Incluir' Action cActionString OPERATION 3 ACCESS 0
 	ADD OPTION aRotina Title 'Alterar' Action cActionString OPERATION 4 ACCESS 0
-	ADD OPTION aRotina Title 'Excluir' Action cActionString OPERATION 5 ACCESS 0
+	ADD OPTION aRotina Title 'Excluir' Action NAMESPACE + ".U_ZORCA01Exc()" OPERATION 5 ACCESS 0
 	ADD OPTION aRotina Title 'Imprimir' Action cActionString OPERATION 8 ACCESS 0
 	ADD OPTION aRotina Title 'Copiar' Action cActionString OPERATION 9 ACCESS 0
 
 Return aRotina
+
+User Function ZORCA01Exc()
+
+    Local oModel := FWLoadModel(NAMESPACE + ".U_ZORCA01")
+    Local cQuery := U_QuerySet( "ZB5", {"ZB5_COD"}, { {"ZB5.ZB5_AREA = ", ZB1->ZB1_COD} })
+    Local cAliasQry := MPSysOpenQuery(cQuery)
+
+    If !(cAliasQry)->(EoF())
+        If ZB1->ZB1_ATIVO == "1"
+
+            If MsgYesNo("Exclusão indisponível, área já está sendo usada em orçamento. Deseja inativar?", "Área em uso")
+                oModel:SetOperation(MODEL_OPERATION_UPDATE)
+                oModel:Activate()
+                oModel:SetValue("ZB1MASTER", "ZB1_ATIVO", "2")
+                oModel:VldData()
+                oModel:CommitData()
+                oModel:DeActivate()
+
+            EndIf
+        Else
+            Aviso("ATENÇÃO", "A área já esta inativa, sua exclusão não pode ser efetuada pois está sendo usada em orçamento", {"Ok"})
+        EndIf
+    Else
+        FWExecView("Excluir", NAMESPACE + ".U_ZORCA01", MODEL_OPERATION_DELETE)
+    EndIf
+
+    (cAliasQry)->(dbCloseArea())
+
+Return            

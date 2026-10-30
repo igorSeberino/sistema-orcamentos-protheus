@@ -320,3 +320,44 @@ User Function OnHrDayChange( nHrDia )
 	EndIf
 
 Return .T.
+
+User Function VldDefin( cDefin )
+
+    Local lRet := .T.
+
+    Local cQuery := U_QuerySet( "ZB2", {"ZB2_COD"}, {{"ZB2.ZB2_COD = ", cDefin}, {"ZB2.ZB2_ATIVO = ", "1"}} )
+    Local cAliasQry := MPSysOpenQuery(cQuery)
+
+    If (cAliasQry)->(EoF())
+        Return (Help( , , " HELP", , "Definição não existe ou está inativa", 1, 0 ), .F.)
+    EndIf
+
+Return lRet
+
+User Function VldArea( cArea )
+
+    Local lRet := .T.
+
+    Local cQuery := U_QuerySet( "ZB1", {"ZB1_COD"}, {{"ZB1.ZB1_COD = ", cArea}, {"ZB1.ZB1_ATIVO = ", "1"}} )
+    Local cAliasQry := MPSysOpenQuery(cQuery)
+
+    If (cAliasQry)->(EoF())
+        Return (Help( , , " HELP", , "Definição não existe ou está inativa", 1, 0 ), .F.)
+    EndIf
+
+Return lRet
+
+User Function VldAprov( cUser )
+
+    Local cQuery := U_QuerySet( "ZB3", {"ZB3_USER"}, {{"ZB3.ZB3_USER = ", cUser}} )
+    Local cAliasQry := MPSysOpenQuery(cQuery)
+
+    If !UsrExist(cUser)
+        Return (Help( , , " HELP", , "Usuário não existe", 1, 0 ), .F.)
+    EndIf
+
+    If !(cAliasQry)->(EoF())
+        Return (Help( , , " HELP", , "Aprovador já cadastrado", 1, 0 ), .F.)
+    EndIf
+
+Return .T.
