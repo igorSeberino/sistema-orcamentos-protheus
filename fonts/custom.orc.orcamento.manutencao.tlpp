@@ -219,6 +219,7 @@ User Function VldHrs( cFieldDays )
     Local nHoras as numeric
 
     nHoras := &(ReadVar())
+
     If nHoras < 0
         Help( , , "	HELP", , "Horas não podem ser negativas.", 1, 0 )
         Return .F.
@@ -230,26 +231,21 @@ User Function VldHrs( cFieldDays )
 	
 Return .T.
 
-User Function VldDias( cFieldHrs as character, nDias, nHrDia ) as logical
+User Function VldDias( cFieldHrs as character ) as logical
 
     Local oModel  := FWModelActive()
 	Local oModelZB6 := oModel:GetModel("ZB6DETAIL")
+	Local nDias as numeric
     Local cHoras as numeric
 
-	If Type("nDias") == "U" 
-		nDias := &(ReadVar())
-	EndIf
-
-	If Type("nHrDia") == "U"
-		nHrDia := FwFldGet("ZB4_HRDNUM")
-	EndIf
+	nDias := &(ReadVar())
 
     If nDias < 0
         Help( , , "	HELP", , "Dias não podem ser negativos.", 1, 0 )
         Return .F.
     EndIf
 
-    cHoras := U_NumToHours(nDias * nHrDia, 8)
+    cHoras := U_NumToHours(nDias * FwFldGet("ZB4_HRDNUM"), 8)
 
     oModelZB6:SetValue( cFieldHrs, cHoras )
 
@@ -264,7 +260,7 @@ User Function ZB6CalcHrs()
 
 	Local nTotal := nDoc + nDev + nAna + nVal
 
-Return nTotal
+Return nTotal                                       
 
 User Function CalcHrsRows( cModelCount, cFieldCount, cModel, cField )
 
