@@ -107,15 +107,33 @@ User Function MenuDef()
 
 Return aRotina
 
+/*/{Protheus.doc} ZORCA02Exc
+	Exclusão customizada da tela ZORCA02. 
+    Segue as regras de exclusão definidas no escopo
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 30/10/2026
+
+	@return Nil
+/*/
 User Function ZORCA02Exc()
 
     Local oModel := FWLoadModel(NAMESPACE + ".U_ZORCA02")
+
+    // Busca registros da ZB5 associados ao registro da ZB1
     Local cQuery := U_QuerySet( "ZB5", {"ZB5_COD"}, { {"ZB5.ZB5_DEFIN = ", ZB2->ZB2_COD} })
     Local cAliasQry := MPSysOpenQuery(cQuery)
 
+    // Se tiver registro
     If !(cAliasQry)->(EoF())
+
+        // Se estiver ativo
         If ZB2->ZB2_ATIVO == "1"
 
+            // Pergunta se deseja inativar
             If MsgYesNo("Exclusão indisponível, definição já está sendo usada em orçamento. Deseja inativar?", "Definição em uso")
                 oModel:SetOperation(MODEL_OPERATION_UPDATE)
                 oModel:Activate()

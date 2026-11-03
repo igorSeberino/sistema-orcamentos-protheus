@@ -53,7 +53,8 @@ User Function ModelDef()
 	Local oStruZB5 := FWFormStruct(1, "ZB5")
 	Local oStruZB6 := FWFormStruct(1, "ZB6")
 
-	U_TriggerSet( oStruZB4, oStruZB6 )
+	// Seta os triggers da tela
+	U_TriggerSet( oStruZB4, oStruZB5, oStruZB6 )
 
     oModel:AddFields("ZB4MASTER", /*cOwner*/, oStruZB4)
 	oModel:AddGrid("ZB5DETAIL", "ZB4MASTER", oStruZB5)
@@ -79,6 +80,10 @@ User Function ModelDef()
 	oModel:GetModel("ZB5DETAIL"):SetUniqueLine( { "ZB5_ITEM" } )
 	oModel:GetModel("ZB6DETAIL"):SetUniqueLine( { "ZB6_SUB" } )
 
+	// Define o preenchimento do modelo como opcional
+	oModel:GetModel("ZB6DETAIL"):SetOptional(.T.)
+
+	// Define chave primária da entidade Model
 	oModel:SetPrimaryKey({ "ZB4_FILIAL", "ZB4_COD", "ZB4_REV" })
 
     oModel:SetActivate({ |oModel| U_ModelActivate( @oModel, "ZB4" ) })
@@ -175,9 +180,22 @@ User Function VldData()
 
 Return lRet
 
-User Function TriggerSet( oStruZB4 as object, oStruZB6 as object )
+/*/{Protheus.doc} TriggerSet
+	Separação da criação dos triggers da 
+	ModelDef(). Apenas por organização
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 30/10/2026
+
+	@return Nil
+/*/
+User Function TriggerSet( oStruZB4 as object, oStruZB5 as object, oStruZB6 as object )
 
 	Local aTriggersZB4 := {}
+	Local aTriggersZB5 := {}
 	Local aTriggersZB6 := {}
 	Local nI as numeric
 
@@ -185,6 +203,10 @@ User Function TriggerSet( oStruZB4 as object, oStruZB6 as object )
 	aAdd( aTriggersZB4, FwStruTrigger( "ZB4_LOJA", "ZB4_NOMCLI", 'Posicione("SA1", 1, xFilial("SA1") + M->ZB4_CLIENT + M->ZB4_LOJA, "A1_NOME")', .F., "", 0,,, "01" ) )
 	aAdd( aTriggersZB4, FwStruTrigger( "ZB4_HRDIA", "ZB4_HRDNUM", UTILS + '.U_HoursToNum(M->ZB4_HRDIA)', .F., "", 0,,, "01" ) )
 	aAdd( aTriggersZB4, FwStruTrigger( "ZB4_TOTHR", "ZB4_TTHRNM", UTILS + '.U_HoursToNum(M->ZB4_TOTHR)', .F., "", 0,,, "01" ) )
+
+	// Monta triggers de ZB5
+	aAdd( aTriggersZB5, FwStruTrigger( "ZB5_DEFIN", "ZB5_DESDEF", 'Posicione("ZB2", 1, xFilial("ZB2") + M->ZB5_DEFIN, "ZB2_DESC")', .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB5, FwStruTrigger( "ZB5_AREA", "ZB5_DESARE", 'Posicione("ZB1", 1, xFilial("ZB1") + M->ZB5_AREA, "ZB1_DESC")', .F., "", 0,,, "01" ) )
 
 	// Triggers de ZB6 (Hora char p/ hora num)
 	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HDOC", "ZB6_HDOCNM", UTILS + ".U_HoursToNum(M->ZB6_HDOC)", .F., "", 0,,, "01" ) )
@@ -204,6 +226,11 @@ User Function TriggerSet( oStruZB4 as object, oStruZB6 as object )
 		oStruZB4:AddTrigger( aTriggersZB4[nI][1], aTriggersZB4[nI][2], aTriggersZB4[nI][3], aTriggersZB4[nI][4] )
 	Next nI
 
+	// Adiciona triggers à ZB5
+	For nI := 1 to Len(aTriggersZB5)
+		oStruZB5:AddTrigger( aTriggersZB5[nI][1], aTriggersZB5[nI][2], aTriggersZB5[nI][3], aTriggersZB5[nI][4] )
+	Next nI
+
 	// Adiciona triggers à ZB6
 	For nI := 1 to Len(aTriggersZB6)
 		oStruZB6:AddTrigger( aTriggersZB6[nI][1], aTriggersZB6[nI][2], aTriggersZB6[nI][3], aTriggersZB6[nI][4] )
@@ -211,6 +238,18 @@ User Function TriggerSet( oStruZB4 as object, oStruZB6 as object )
 
 Return
 
+/*/{Protheus.doc} VldHrs
+	Valida o campo horas e seta o campo
+	dias já convertido
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 03/11/2026
+
+	@return logical
+/*/
 User Function VldHrs( cFieldDays )
 
 	Local oModel  := FWModelActive()
@@ -218,6 +257,8 @@ User Function VldHrs( cFieldDays )
     Local nDias  as numeric
     Local nHoras as numeric
 
+	// Captura as horas do campo
+	// ReadVar() retorna o nome do campo
     nHoras := &(ReadVar())
 
     If nHoras < 0
@@ -225,12 +266,26 @@ User Function VldHrs( cFieldDays )
         Return .F.
     EndIf
 
+	// Converte horas em dias
     nDias := nHoras / FwFldGet("ZB4_HRDNUM")
 
+	// Seta na var de dias
     oModelZB6:LoadValue( cFieldDays, nDias )
 	
 Return .T.
 
+/*/{Protheus.doc} VldDias
+	Valida o campo dias e seta o campo
+	horas já convertido
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 03/11/2026
+
+	@return logical
+/*/
 User Function VldDias( cFieldHrs as character ) as logical
 
     Local oModel  := FWModelActive()
@@ -238,6 +293,8 @@ User Function VldDias( cFieldHrs as character ) as logical
 	Local nDias as numeric
     Local cHoras as numeric
 
+	// Captura os dias do campo
+	// ReadVar() retorna o nome do campo
 	nDias := &(ReadVar())
 
     If nDias < 0
@@ -245,12 +302,27 @@ User Function VldDias( cFieldHrs as character ) as logical
         Return .F.
     EndIf
 
+	// Converte dias em horas
     cHoras := U_NumToHours(nDias * FwFldGet("ZB4_HRDNUM"), 8)
 
+	// Seta o valor de horas
     oModelZB6:SetValue( cFieldHrs, cHoras )
 
 Return .T.
 
+/*/{Protheus.doc} ZB6CalcHrs
+	Calcula as horas totais da ZB6,
+	chamado à cada alteração de horas
+	ou dias
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 03/11/2026
+
+	@return numeric
+/*/
 User Function ZB6CalcHrs()
 
 	Local nDoc := FwFldGet("ZB6_HDOCNM")
@@ -262,6 +334,18 @@ User Function ZB6CalcHrs()
 
 Return nTotal                                       
 
+/*/{Protheus.doc} CalcHrsRows
+	Calcula as horas totais dos elementos
+	filhos e armazena no elemento pai
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 03/11/2026
+
+	@return logical
+/*/
 User Function CalcHrsRows( cModelCount, cFieldCount, cModel, cField )
 
 	Local oModel := FWModelActive()
@@ -270,10 +354,12 @@ User Function CalcHrsRows( cModelCount, cFieldCount, cModel, cField )
 	Local nTotal as numeric
 	Local nI as numeric
 
+	// Percorre cada item filho do grid
 	For nI := 1 to oGrid:Length()
 
 		If !oGrid:IsDeleted(nI)
 
+			// Soma o total de horas
 			nTotal := nTotal + oGrid:GetValue(cFieldCount, nI)
 
 		EndIf
@@ -284,6 +370,16 @@ User Function CalcHrsRows( cModelCount, cFieldCount, cModel, cField )
 
 Return .T.
 
+/*/{Protheus.doc} RemoveFields
+	Fields removidos da view, separados
+	por organização
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 03/11/2026
+/*/
 User Function RemoveFields( oStruZB4, oStruZB5, oStruZB6 )
 
 	// ZB4

@@ -210,25 +210,47 @@ User Function NumToHours( nValue, nTam )
 
 Return cHour
 
-User Function HoursToDays( nValue )
-Return nValue / 8.5
+/*/{Protheus.doc} TotalHrsCharSet
+	Habilita a edição do campo de total de horas, 
+    insere o valor e desabilita de novo
 
+	@type user function
+
+	@author igor.seberino
+
+	@since 03/11/2026
+/*/
 User Function TotalHrsCharSet( nTotal, cModel )
 
 	Local oModelActive := FWModelActive()
     Local oModel := oModelActive:GetModel(cModel)
 	Local oStruct  := oModel:GetStruct()
 
+    // Define o campo pelo alias, padrão da tabela
 	Local cField := Left(cModel, 3) + "_TOTHR"
 
+    // Habilita a edição 
 	oStruct:SetProperty( cField, MODEL_FIELD_WHEN, { || .T. } )
 
 	oModel:SetValue( cField, U_NumToHours(nTotal, 10) )
 
+    // Desabilita a edição
 	oStruct:SetProperty( cField, MODEL_FIELD_WHEN, { || .F. } )
 
 Return .T.
 
+/*/{Protheus.doc} OnHrDayChange
+	Recalcula todas as atividades e todos os itens
+    na alteração do Hrs/Dia, a partir do novo valor. 
+    Demais gatilhos e atualizações partem dos campos
+    alterados aqui
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 03/11/2026
+/*/
 User Function OnHrDayChange( nHrDia )
 
 	Local oModel    := FWModelActive()
@@ -241,29 +263,37 @@ User Function OnHrDayChange( nHrDia )
     Local nDev as numeric
     Local nAna as numeric
     Local nVal as numeric
+    Local nOpcao as numeric
 
+    // Verifica se já foram calculadas as horas de algo (necessário recalcular)
 	If M->ZB4_TTHRNM > 0
 
+        // Salva a linha que estava posicionada de cada model
         aSaveRows := FWSaveRows()
+
+        nOpcao := Aviso( "Horas/Dia alterado", "Já existem horas lançadas, como deseja recalcular?", { "Recalc. Horas", "Recalc. Dias" } )
 
 		oModelZB5 := oModel:GetModel("ZB5DETAIL")
 		oModelZB6 := oModel:GetModel("ZB6DETAIL")
 
-		If MsgYesNo("Deseja recalcular as horas a partir dos dias? Sim: recalcula as horas a partir dos dias. Não: mantém as horas e recalcula os dias")
+		If nOpcao == 1
 			// Valida os dias novamente
 
+            // Percorre cada item do orçamento
 			For n1 := 1 to oModelZB5:Length()
 
 				If !oModelZB5:IsDeleted(n1)
 
                     oModelZB5:GoLine(n1)
 
+                    // Percorre cada atividade do item
 					For n2 := 1 to oModelZB6:Length()
 
 						If !oModelZB6:IsDeleted(n2)
 
                             oModelZB6:GoLine(n2)
 
+                            // Grava recalculado em cada campo
                             nDoc := oModelZB6:GetValue("ZB6_DDOC") * nHrDia
                             nDev := oModelZB6:GetValue("ZB6_DDEV") * nHrDia
                             nAna := oModelZB6:GetValue("ZB6_DANA") * nHrDia
@@ -285,18 +315,21 @@ User Function OnHrDayChange( nHrDia )
 		Else
 			// Valida as horas novamente
 
+            // Percorre cada item do orçamento
 			For n1 := 1 to oModelZB5:Length()
 
 				If !oModelZB5:IsDeleted(n1)
 
                     oModelZB5:GoLine(n1)
 
+                    // Percorre cada atividade do item
 					For n2 := 1 to oModelZB6:Length()
 
 						If !oModelZB6:IsDeleted(n2)
 
                             oModelZB6:GoLine(n2)
 
+                            // Grava recalculado em cada campo
                             nDoc := oModelZB6:GetValue("ZB6_HDOCNM") / nHrDia
                             nDev := oModelZB6:GetValue("ZB6_HDEVNM") / nHrDia
                             nAna := oModelZB6:GetValue("ZB6_HANANM") / nHrDia
@@ -317,13 +350,26 @@ User Function OnHrDayChange( nHrDia )
 
 		EndIf
 		
+        // Retorna às linhas originais
+        FWRestRows( aSaveRows )
+
 	EndIf
 
 Return .T.
 
-User Function VldDefin( cDefin )
+/*/{Protheus.doc} VldDefin
+	Valida definição caso seja escrita pelo usuário,
+    verificando se está ativa ou existe. 
 
-    Local lRet := .T.
+	@type user function
+
+	@author igor.seberino
+
+	@since 03/11/2026
+
+    @return logical
+/*/
+User Function VldDefin( cDefin )
 
     Local cQuery := U_QuerySet( "ZB2", {"ZB2_COD"}, {{"ZB2.ZB2_COD = ", cDefin}, {"ZB2.ZB2_ATIVO = ", "1"}} )
     Local cAliasQry := MPSysOpenQuery(cQuery)
@@ -332,11 +378,21 @@ User Function VldDefin( cDefin )
         Return (Help( , , " HELP", , "Definição não existe ou está inativa", 1, 0 ), .F.)
     EndIf
 
-Return lRet
+Return .T.
 
+/*/{Protheus.doc} VldArea
+	Valida área caso seja escrita pelo usuário,
+    verificando se está ativa ou existe. 
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 03/11/2026
+
+    @return logical
+/*/
 User Function VldArea( cArea )
-
-    Local lRet := .T.
 
     Local cQuery := U_QuerySet( "ZB1", {"ZB1_COD"}, {{"ZB1.ZB1_COD = ", cArea}, {"ZB1.ZB1_ATIVO = ", "1"}} )
     Local cAliasQry := MPSysOpenQuery(cQuery)
@@ -345,8 +401,20 @@ User Function VldArea( cArea )
         Return (Help( , , " HELP", , "Definição não existe ou está inativa", 1, 0 ), .F.)
     EndIf
 
-Return lRet
+Return .T.
 
+/*/{Protheus.doc} VldAprov
+	Valida se o usuário existe e se
+    já está cadastrado como aprovador
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 03/11/2026
+
+    @return logical
+/*/
 User Function VldAprov( cUser )
 
     Local cQuery := U_QuerySet( "ZB3", {"ZB3_USER"}, {{"ZB3.ZB3_USER = ", cUser}} )
