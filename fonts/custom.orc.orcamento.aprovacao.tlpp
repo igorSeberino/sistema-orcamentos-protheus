@@ -1,0 +1,395 @@
+#include "totvs.ch"
+#include "fwmvcdef.ch"
+
+namespace custom.orc.orcamento.aprovacao
+using namespace custom.orc.utils
+
+#define NAMESPACE "custom.orc.orcamento.aprovacao"
+#define ZORCA04   "custom.orc.orcamento.manutencao"
+
+#define STATUS_RASCUNHO  "1"
+#define STATUS_ENVIADO   "2"
+#define STATUS_APROVADO  "3"
+#define STATUS_REPROVADO "4"
+
+#define ACAO_ENVIADO     "1"
+#define ACAO_APROVADO    "2"
+#define ACAO_REPROVADO   "3"
+#define ACAO_ESTORNADO   "4"
+
+User Function ZORCA05( cAction )
+
+    Local oModal := FWDialogModal():New()
+    Local oPanel := oModal:GetPanelMain()
+
+    Do Case
+    Case cAction == 'APR'
+        U_Revisar( oModal, oPanel )
+    Case cAction == 'ENV'
+        U_Envio( oModal, oPanel )
+    Case cAction == 'NOV'
+        U_NovoRascunho( oModal, oPanel )
+    Case cAction == 'EST'
+        U_Estornar( oModal, oPanel )
+    EndCase
+
+Return .T.
+
+User Function MontaTela( oModal, oPanel, cAction, cObs )
+
+    Local bCode as CodeBlock
+    Local nOpcao as numeric
+    Local nRet
+
+    Local cTextHtml := '<hr size="1">'+;
+        ' <font size="2" ><b>ORÇAMENTO: </b> ' + ZB4->ZB4_COD + ' / ' + ZB4->ZB4_REV + ' </font> ' +;
+        ' <font size="2" > <b> CLIENTE: </b> ' + Posicione("SA1", 1, xFilial("SA1") + ZB4->ZB4_CLIENT + ZB4->ZB4_LOJA, "A1_NOME") +  ' </font><br/><br/>' +;
+        ' <font size="2"><b>TÍTULO: </b> ' + ZB4->ZB4_TITULO +  ' </font><br/><br/>' +;
+        ' <font size="2"><b>TICKET: </b> ' + ZB4->ZB4_TICKET +  ' </font> ' +;
+        ' <font size="2" > <b> TASK: </b> ' + ZB4->ZB4_TASK +  ' </font><br/><br/>' +;
+        ' <font size="2"><b>CRIADO POR: </b> ' + ZB4->ZB4_USRINC +  ' </font> ' +;
+        ' <font size="2" > <b> TOTAL: </b> ' + U_NUMTOHOURS( ZB4->ZB4_TTHRNM, 10)  +  ' </font><br/><br/>'
+
+    If cAction == "APR"
+
+        cObs   := ""
+        nOpcao := 1
+        bCode := { || ;
+            Iif( nOpcao == 1, (nRet := nOpcao, oModal:DeActivate()), ;  // Se for aprovação
+            Iif( nOpcao == 2 .And. !Empty( AllTrim( cObs ) ), ( nRet:= nOpcao, oModal:DeActivate() ), ; // Se for reprovar e tiver comentário
+            Help( , , "ZORCA05", , "Reprovar exige observação", 1, 0 ) ) ) } // Se for reprovar sem comentário
+
+        oModal:SetEscClose(.T.)
+        oModal:SetTitle("Aprovação do Orçamento")
+        oModal:SetSize(110, 515) // altura, largura
+        oModal:CreateDialog()
+
+        TSay():New( 015, 230, { || "<b>OBSERVAÇÃO (máx. 250 caracteres)</b>" }, oPanel, , , , , , .T., , , 100, 010, , , , , , .T. )
+
+        TMultiGet():New( 025, 230, { |u| If( PCount() > 0, cObs := u, cObs ) }, oPanel, 280, 060, , , , , , .T. )
+
+        // Ação
+        TRadMenu():New(080, 010, {"Aprovar", "Reprovar"}, { |u| If( PCount() > 0, nOpcao := u, nOpcao ) }, oPanel, , , , , , , , 100, 20, , , , .F., .T.)
+
+    ElseIf cAction == "ENV"
+
+        bCode := {  || nRet := 2, oModal:DeActivate() }
+
+        oModal:SetEscClose(.T.)
+        oModal:SetTitle("Enviar rascunho")
+        oModal:SetSize(110, 315) // altura, largura
+        oModal:CreateDialog()
+
+    ElseIf cAction == "NOV"
+
+        bCode := {  || nRet := 2, oModal:DeActivate() }
+
+        oModal:SetEscClose(.T.)
+        oModal:SetTitle("Gerar nova revisão")
+        oModal:SetSize(110, 315) // altura, largura
+        oModal:CreateDialog()
+
+    ElseIf cAction == "EST"
+    
+        cObs   := ""
+        bCode := { || ;
+            Iif( !Empty(AllTrim( cObs )), ( nRet := 2, oModal:DeActivate() ), Help( , , "ZORCA05", , "Estornar exige observação", 1, 0 ) ) } 
+
+        oModal:SetEscClose(.T.)
+        oModal:SetTitle("Estornar Orçamento")
+        oModal:SetSize(110, 515) // altura, largura
+        oModal:CreateDialog()
+
+        TSay():New( 015, 230, { || "<b>OBSERVAÇÃO (máx. 250 caracteres)</b>" }, oPanel, , , , , , .T., , , 100, 010, , , , , , .T. )
+
+        TMultiGet():New( 025, 230, { |u| If( PCount() > 0, cObs := u, cObs ) }, oPanel, 280, 060, , , , , , .T. )
+
+    EndIf
+
+
+    TSay():New( 015, 010, { || cTextHtml },       oPanel, , , , , , .T., , , 200, 060, , , , , , .T. )
+
+
+    // Botao dentro do painel
+    TButton():New(095, 010, "Visualizar Orçamento", oPanel, {|| }, 80, 15, , , , .T.)
+
+    // Botões da barra inferior
+    oModal:AddOkButton( bCode, "Confirmar" )
+    oModal:AddCloseButton( Nil, "Cancelar" )
+
+    oModal:Activate()
+
+Return nRet
+
+User Function Envio( oModal, oPanel )
+
+    Local lRet
+
+	// Carrega o modelo de dados
+	Local oModel := FWLoadModel(ZORCA04 + ".U_ZORCA04")
+
+	// Verificação extra caso VldActivate() não funcione
+	If ZB4->ZB4_STATUS != "1"
+		Help( , , "ZORCA05", , "Somente orçamento em rascunho pode ser enviado.", 1, 0 )
+    	Return .F.
+    EndIf
+
+	// Declara operação de update
+	oModel:SetOperation(MODEL_OPERATION_UPDATE)
+
+	// ATIVA O MODELO (Agora sim ele está operável)
+    If !oModel:Activate()
+        lRet := .F.
+
+    ElseIf !U_VldEnvio( oModel )
+        Help( , , "ZORCA05", , "Cada item do orçamento deve ter pelo menos 1 atividade", 1, 0 )
+        
+        lRet := .F.
+
+	ElseIf U_MontaTela( oModal, oPanel, "ENV" ) == 2
+
+        Begin Transaction
+
+            If oModel:SetValue("ZB4MASTER", "ZB4_STATUS", "2") .And. oModel:VldData() .And. oModel:CommitData() //VldData() garante que o modelo passe pelas validações de negócio
+
+                If !U_GravaHist( ACAO_ENVIADO )
+                    DisarmTransaction()
+                    Help( , , "ZORCA05", , "Ocorreu um erro ao gravar o histórico", 1, 0 )
+                EndIf
+
+            Else
+                DisarmTransaction()
+                Help( , , "ZORCA05", , "Ocorreu um erro inesperado", 1, 0 )
+
+            EndIf
+
+
+        End Transaction
+
+    EndIf
+
+    If oModel:IsActive()
+        // Desativa o modelo, necessário para liberar o lock.
+        oModel:DeActivate()
+    EndIf
+
+Return .T.
+
+User Function Revisar( oModal, oPanel )
+
+    Local nOpcao 
+    Local aArea
+    Local cObs
+
+    If ZB4->ZB4_STATUS != STATUS_ENVIADO
+        Help( , , "ZORCA05", , "O orçamento não foi enviado para revisão.", 1, 0 )
+    	Return .F.
+    EndIf
+
+    nOpcao := U_MontaTela( oModal, oPanel, "APR", @cObs )
+
+    If nOpcao != Nil
+
+        aArea := GetArea()
+
+        Begin Transaction
+
+            If RecLock("ZB4", .F.)
+            
+                If ZB4->ZB4_STATUS == STATUS_ENVIADO
+
+                    Do Case
+                        Case nOpcao == 1
+                            ZB4->ZB4_STATUS := STATUS_APROVADO
+                            If !U_GravaHist( ACAO_APROVADO, cObs )
+                                Help( , , "ZORCA05", , "Ocorreu um erro ao gravar o histórico.", 1, 0 )
+                                DisarmTransaction()
+                            EndIf
+                        Case nOpcao == 2
+                            ZB4->ZB4_STATUS := STATUS_REPROVADO
+                            If !U_GravaHist( ACAO_REPROVADO, cObs )
+                                Help( , , "ZORCA05", , "Ocorreu um erro ao gravar o histórico.", 1, 0 )
+                                DisarmTransaction()
+                            EndIf
+                        Otherwise
+                            Help( , , "ZORCA05", , "Ocorreu um erro inesperado", 1, 0 )
+                    EndCase   
+
+                Else
+
+                    Help( , , "ZORCA05", , "O status do orçamento foi alterado por outro usuário.", 1, 0 )
+                    DisarmTransaction()
+
+                EndIf
+
+                ZB4->( MsUnlock() )
+                
+            EndIf
+
+        End Transaction
+
+        RestArea( aArea )
+
+    EndIf
+
+
+Return .T.
+
+User Function NovoRascunho( oModal, oPanel )
+
+    Local oModel := FWLoadModel(ZORCA04 + ".U_ZORCA04")
+    Local nOpcao
+    Local cCod := ZB4->ZB4_COD
+    Local cRev := StrZero( (Val(ZB4->ZB4_REV) + 1), 2 )
+    Local cQuery := U_QuerySet( "ZB4", {"ZB4_COD"}, { {"ZB4_COD = ", cCod}, {"ZB4_REV = ", cRev} } )
+    Local cAliasQry := MPSysOpenQuery(cQuery)
+
+    If ZB4->ZB4_STATUS != STATUS_APROVADO .And. ZB4->ZB4_STATUS != STATUS_REPROVADO
+        Help( , , "ZORCA05", , "O orçamento precisa ter sido revisado para abrir um novo rascunho.", 1, 0 )
+    	Return .F.
+    ElseIf !(cAliasQry)->(EoF())
+        Help( , , "ZORCA05", , "O orçamento já tem um novo rascunho criado.", 1, 0 )
+    	Return .F.
+    EndIf
+
+    (cAliasQry)->(dbCloseArea())
+
+    nOpcao := U_MontaTela( oModal, oPanel, "NOV" )
+
+    If nOpcao != Nil
+
+	    oModel:SetOperation(MODEL_OPERATION_INSERT)
+
+	    If oModel:Activate(.T.)
+
+            oModel:LoadValue( "ZB4MASTER", "ZB4_COD", cCod )
+            oModel:LoadValue( "ZB4MASTER", "ZB4_REV", cRev )
+
+            // Limpa o histórico de revisão
+            oModel:GetModel("ZB7DETAIL"):ClearData( .F., .T. )
+
+            FWExecView( "Novo Rascunho", "VIEWDEF." + ZORCA04 + ".ZORCA04", MODEL_OPERATION_INSERT, , { || .T. }, , , , , , , oModel )
+
+            If oModel:IsActive()
+                oModel:DeActivate()
+            EndIf
+
+	    EndIf
+
+    EndIf
+
+
+Return .T.
+
+User Function Estornar( oModal, oPanel )
+
+    Local nOpcao
+    Local aArea
+    Local cObs
+
+    If ZB4->ZB4_STATUS != STATUS_APROVADO
+        Help( , , "ZORCA05", , "O orçamento só pode ser estornado após aprovação.", 1, 0 )
+    	Return .F.
+    EndIf
+
+    nOpcao := U_MontaTela( oModal, oPanel, "EST", @cObs )
+
+    If nOpcao != Nil
+
+        aArea := GetArea()
+
+        Begin Transaction
+
+            If RecLock("ZB4", .F.)
+            
+                If ZB4->ZB4_STATUS == STATUS_APROVADO
+
+                    ZB4->ZB4_STATUS := STATUS_ENVIADO
+                    ZB4->ZB4_USRAPR := ""
+                    ZB4->ZB4_DTAPR  := CtoD("")   
+                    ZB4->ZB4_HRAPR  := ""
+
+                    If !U_GravaHist( ACAO_APROVADO, cObs )
+                        Help( , , "ZORCA05", , "Ocorreu um erro ao gravar o histórico.", 1, 0 )
+                        DisarmTransaction()
+                    EndIf   
+
+                Else
+
+                    Help( , , "ZORCA05", , "O status do orçamento foi alterado por outro usuário.", 1, 0 )
+                    DisarmTransaction()
+
+                EndIf
+
+                ZB4->( MsUnlock() )
+                
+            EndIf
+
+        End Transaction
+
+        RestArea( aArea )
+
+    EndIf
+
+Return .T.
+
+User Function VldEnvio( oModel )
+
+    Local oModelZB5 := oModel:GetModel("ZB5DETAIL")
+    Local oModelZB6 := oModel:GetModel("ZB6DETAIL")
+    Local n1 as numeric
+    Local n2 as numeric
+
+    Local lRet := .T.
+
+    For n1 := 1 to oModelZB5:Length()
+
+        oModelZB5:GoLine(n1)
+
+		If !oModelZB5:IsDeleted(n1)
+
+			For n2 := 1 to oModelZB6:Length()
+
+                If !oModelZB6:IsDeleted(n2) .And. !oModelZB6:IsEmpty()
+                    **exit**
+                ElseIf n2 == oModelZB6:Length()
+                    lRet := .F.
+				EndIf
+			Next n2
+		EndIf
+	Next n1
+
+Return lRet
+
+User Function GravaHist(  cAcao, cObs as character )
+
+    Local aArea := GetArea()
+    Local lRet := .F.
+    Local cSeq := "001"
+    Local cQuery    := U_QuerySet( "ZB7", { "MAX(ZB7_SEQ) ZB7_SEQ" }, { {"ZB7_COD = ", ZB4->ZB4_COD}, {"ZB7_REV = ", ZB4->ZB4_REV} } )
+    Local cAliasQry := MPSysOpenQuery( cQuery )
+
+    If !(cAliasQry)->(EoF())
+        cSeq := StrZero(Val((cAliasQry)->ZB7_SEQ) + 1, 3)
+    EndIf
+
+    (cAliasQry)->( dbCloseArea() )
+
+    If RecLock("ZB7", .T.) // .T. = inclusão
+        ZB7->ZB7_FILIAL := xFilial("ZB7")
+        ZB7->ZB7_COD := ZB4->ZB4_COD
+        ZB7->ZB7_REV := ZB4->ZB4_REV
+        ZB7->ZB7_SEQ := cSeq
+        ZB7->ZB7_ACAO := cAcao
+        ZB7->ZB7_USER := RetCodUsr()
+        ZB7->ZB7_DATA := Date() 
+        ZB7->ZB7_HORA := Time()
+        ZB7->ZB7_OBS := cObs
+
+        ZB7->( MsUnlock() )
+        lRet := .T.
+    EndIf
+
+    RestArea( aArea )
+
+Return lRet

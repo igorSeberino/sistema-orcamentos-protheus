@@ -88,8 +88,8 @@ Return lExiste
     @param aParamsSelect, array, parametros que deseja como retorno
 
     @param aParamsWhere, array, parametros que deseja filtrar,
-    formato { {Campo + Operador}, {Valor} }
-    exemplo [ {ZA1.ZA1_COD =}, {000004} ]
+    formato { {Campo + Operador, Valor} }
+    exemplo { { "ZA1.ZA1_COD = ", "000004" } }
 
 	@return cQueryRet, query montada
 /*/
@@ -121,6 +121,7 @@ User Function QuerySet( cAlias, aParamsSelect, aParamsWhere )
         For nI := 1 to Len(aParamsWhere)
             If nI == 1
                 cQueryBase += " WHERE " + cAlias + ".D_E_L_E_T_ = ' ' "
+                cQueryBase += " AND " + cAlias + "_FILIAL = " + xFilial(cAlias)
                 cQueryBase += " AND " + aParamsWhere[nI][1] + " ? "
             Else
                 cQueryBase += " AND " + aParamsWhere[nI][1] + " ? "

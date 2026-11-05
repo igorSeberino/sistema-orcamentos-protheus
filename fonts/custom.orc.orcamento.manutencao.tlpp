@@ -3,10 +3,22 @@
 #include "fwmvcdef.ch"
 
 namespace custom.orc.orcamento.manutencao
+
 using namespace custom.orc.utils
 
 #define NAMESPACE "custom.orc.orcamento.manutencao"
 #define UTILS "custom.orc.utils"
+#define ZORCA05 "custom.orc.orcamento.aprovacao"
+
+#define STATUS_RASCUNHO  "1"
+#define STATUS_ENVIADO   "2"
+#define STATUS_APROVADO  "3"
+#define STATUS_REPROVADO "4"
+
+#define ACAO_ENVIADO     "1"
+#define ACAO_APROVADO    "2"
+#define ACAO_REPROVADO   "3"
+#define ACAO_ESTORNADO   "4"
 
 /*/{Protheus.doc} ZORCA04
 	Orçamentos (browse e manutenção) (ZB4) - tela browse
@@ -52,29 +64,19 @@ User Function ModelDef()
     Local oStruZB4 := FWFormStruct(1, "ZB4")
 	Local oStruZB5 := FWFormStruct(1, "ZB5")
 	Local oStruZB6 := FWFormStruct(1, "ZB6")
+	Local oStruZB7 := FWFormStruct(1, "ZB7")
 
-	// Seta os triggers da tela
+	// Seta os triggers do model
 	U_TriggerSet( oStruZB4, oStruZB5, oStruZB6 )
 
     oModel:AddFields("ZB4MASTER", /*cOwner*/, oStruZB4)
 	oModel:AddGrid("ZB5DETAIL", "ZB4MASTER", oStruZB5)
 	oModel:AddGrid("ZB6DETAIL", "ZB5DETAIL", oStruZB6)
+	oModel:AddGrid("ZB7DETAIL", "ZB4MASTER", oStruZB7)
     oModel:SetDescription('Modelo de Orçamentos')
 
-	// Define relação entre ZB4 e ZB5
-	oModel:SetRelation("ZB5DETAIL", { ;
-        {"ZB5_FILIAL", "xFilial('ZB5')"}, ;
-        {"ZB5_COD"   , "ZB4_COD"}, ;
-        {"ZB5_REV"   , "ZB4_REV"}  ;
-    }, ZB5->(IndexKey(1)))
-
-	// Define relação entre ZB5 e ZB6
-	oModel:SetRelation("ZB6DETAIL", { ;
-        {"ZB6_FILIAL" , "xFilial('ZB6')"}, ;
-        {"ZB6_COD"    , "ZB4_COD"}, ;
-        {"ZB6_REV"    , "ZB4_REV"},  ;
-		{"ZB6_ITEM"   , "ZB5_ITEM"}  ;
-    }, ZB6->(IndexKey(1)))
+	// Seta os relacionamentos do model
+	U_RelationSet( @oModel )
 
     oModel:GetModel('ZB4MASTER'):SetDescription('Modelo de Orçamentos')
 	oModel:GetModel("ZB5DETAIL"):SetUniqueLine( { "ZB5_ITEM" } )
@@ -82,11 +84,21 @@ User Function ModelDef()
 
 	// Define o preenchimento do modelo como opcional
 	oModel:GetModel("ZB6DETAIL"):SetOptional(.T.)
+	oModel:GetModel("ZB7DETAIL"):SetOptional(.T.)
+
+	// Apenas leitura
+	oModel:GetModel("ZB7DETAIL"):SetOnlyQuery(.T.)
+	oModel:GetModel("ZB7DETAIL"):SetNoInsertLine(.T.)
+	oModel:GetModel("ZB7DETAIL"):SetNoUpdateLine(.T.)
+	oModel:GetModel("ZB7DETAIL"):SetNoDeleteLine(.T.)
 
 	// Define chave primária da entidade Model
 	oModel:SetPrimaryKey({ "ZB4_FILIAL", "ZB4_COD", "ZB4_REV" })
 
-    oModel:SetActivate({ |oModel| U_ModelActivate( @oModel, "ZB4" ) })
+    oModel:SetActivate({ |oModel| U_ZB4Activate( @oModel ) })
+
+	// Condiciona a edição do orçamento ao status de rascunho
+	oModel:SetVldActive( { |oModel| U_VldActivate( @oModel ) } )
 
 Return oModel
 
@@ -107,26 +119,40 @@ User Function ViewDef()
     Local oStruZB4 := FWFormStruct(2, "ZB4")
 	Local oStruZB5 := FWFormStruct(2, "ZB5")
 	Local oStruZB6 := FWFormStruct(2, "ZB6")
+	Local oStruZB7 := FWFormStruct(2, "ZB7")
     Local oView := FWFormView():New()
 
 	// Esconde campos do usuário (controle interno)
-	U_RemoveFields( oStruZB4, oStruZB5, oStruZB6 )
+	U_RemoveFields( oStruZB4, oStruZB5, oStruZB6, oStruZB7 )
 
     oView:SetModel( oModel )
     oView:AddField( 'VIEW_ZB4', oStruZB4, 'ZB4MASTER' )
-	oView:AddGrid( 'VIEW_ZB5', oStruZB5, 'ZB5DETAIL' )
-	oView:AddGrid( 'VIEW_ZB6', oStruZB6, 'ZB6DETAIL' )
+	oView:AddGrid(  'VIEW_ZB5', oStruZB5, 'ZB5DETAIL' )
+	oView:AddGrid(  'VIEW_ZB6', oStruZB6, 'ZB6DETAIL' )
+	oView:AddGrid(  'VIEW_ZB7', oStruZB7, 'ZB7DETAIL' )
 
-    oView:CreateHorizontalBox( 'TELA', 50 )
-	oView:CreateHorizontalBox( 'TELA_ZB5', 25 )
-	oView:CreateHorizontalBox( 'TELA_ZB6', 25 )
+    oView:CreateHorizontalBox( 'TELA', 60 )
+	oView:CreateHorizontalBox( 'PASTAS', 40 )
+
+	oView:CreateFolder( 'FOLDER', 'PASTAS' )
+	oView:AddSheet( 'FOLDER', 'ATIVIDADES', 'Atividades' )
+	oView:AddSheet( 'FOLDER', 'HISTORICO', 'Histórico de Aprovação' )
+
+	oView:CreateHorizontalBox('BOX_ZB5', 50, , ,  'FOLDER', 'ATIVIDADES')
+	oView:CreateHorizontalBox('BOX_ZB6', 50, , ,  'FOLDER', 'ATIVIDADES')
+	oView:CreateHorizontalBox('BOX_ZB7', 100, , , 'FOLDER', 'HISTORICO')
+
     oView:SetOwnerView( 'VIEW_ZB4', 'TELA' )
-	oView:SetOwnerView( 'VIEW_ZB5', 'TELA_ZB5' )
-	oView:SetOwnerView( 'VIEW_ZB6', 'TELA_ZB6' )
+	oView:SetOwnerView( 'VIEW_ZB5', 'BOX_ZB5' )
+	oView:SetOwnerView( 'VIEW_ZB6', 'BOX_ZB6' )
+	oView:SetOwnerView( 'VIEW_ZB7', 'BOX_ZB7' )
 
 	// Define o código incrementais para ZB5 e ZB6
 	oView:AddIncrementField("VIEW_ZB5", "ZB5_ITEM")
 	oView:AddIncrementField("VIEW_ZB6", "ZB6_SUB")
+
+	// Oculta o histórico na inclusão
+	oView:SetAfterViewActivate( { |oView| U_HideHist( oView ) } )
 
 Return oView
 
@@ -153,6 +179,10 @@ User Function MenuDef()
 	ADD OPTION aRotina Title 'Excluir' Action cActionString OPERATION 5 ACCESS 0
 	ADD OPTION aRotina Title 'Imprimir' Action cActionString OPERATION 8 ACCESS 0
 	ADD OPTION aRotina Title 'Copiar' Action cActionString OPERATION 9 ACCESS 0
+	ADD OPTION aRotina Title 'Enviar Rascunho' Action ZORCA05 + ".U_ZORCA05( 'ENV' )" OPERATION 5 ACCESS 0
+	ADD OPTION aRotina Title 'Aprovação' Action ZORCA05 + ".U_ZORCA05( 'APR' )" OPERATION 5 ACCESS 0
+	ADD OPTION aRotina Title 'Novo Rascunho' Action ZORCA05 + ".U_ZORCA05( 'NOV' )" OPERATION 5 ACCESS 0
+	ADD OPTION aRotina Title 'Estornar' Action ZORCA05 + ".U_ZORCA05( 'EST' )" OPERATION 5 ACCESS 0
 
 Return aRotina
 
@@ -380,7 +410,7 @@ Return .T.
 
 	@since 03/11/2026
 /*/
-User Function RemoveFields( oStruZB4, oStruZB5, oStruZB6 )
+User Function RemoveFields( oStruZB4, oStruZB5, oStruZB6, oStruZB7 )
 
 	// ZB4
 	oStruZB4:RemoveField("ZB4_HRDNUM")
@@ -400,5 +430,81 @@ User Function RemoveFields( oStruZB4, oStruZB5, oStruZB6 )
 	oStruZB6:RemoveField("ZB6_HDEVNM")
 	oStruZB6:RemoveField("ZB6_HANANM")
 	oStruZB6:RemoveField("ZB6_HVALNM")
+
+	// ZB7
+	oStruZB7:RemoveField("ZB7_COD")
+	oStruZB7:RemoveField("ZB7_REV")
+
+Return .T.                                                                                                    
+
+User Function VldActivate( oModel as object )
+
+	Local lRet := .T.
+	local nOperation := oModel:GetOperation()
+
+	If ( nOperation == MODEL_OPERATION_UPDATE .Or. nOperation == MODEL_OPERATION_DELETE ) .And. ZB4->ZB4_STATUS != "1"
+	
+		oModel:SetErrorMessage( "ZB4MASTER", "ZB4_STATUS", "ZB4MASTER", "ZB4_STATUS", "ERRO", ;
+        "Orçamento enviado não pode ser alterado nem excluído.", ;
+        "Utilize visualizar ou aguarde retorno" )
+		lRet := .F.
+	
+	EndIf
+
+Return lRet
+
+User Function RelationSet( oModel )
+
+	// Define relação entre ZB4 e ZB5
+	oModel:SetRelation("ZB5DETAIL", { ;
+        {"ZB5_FILIAL", "xFilial('ZB5')"}, ;
+        {"ZB5_COD"   , "ZB4_COD"}, ;
+        {"ZB5_REV"   , "ZB4_REV"}  ;
+    }, ZB5->(IndexKey(1)))
+
+	// Define relação entre ZB5 e ZB6
+	oModel:SetRelation("ZB6DETAIL", { ;
+        {"ZB6_FILIAL" , "xFilial('ZB6')"}, ;
+        {"ZB6_COD"    , "ZB4_COD"}, ;
+        {"ZB6_REV"    , "ZB4_REV"},  ;
+		{"ZB6_ITEM"   , "ZB5_ITEM"}  ;
+    }, ZB6->(IndexKey(1)))
+	
+	// Define relação entre ZB7 e ZB4
+	oModel:SetRelation("ZB7DETAIL", { ;
+        {"ZB7_FILIAL" , "xFilial('ZB7')"}, ;
+        {"ZB7_COD"    , "ZB4_COD"}, ;
+        {"ZB7_REV"    , "ZB4_REV"}  ;
+    }, ZB7->(IndexKey(1)))
+
+Return
+
+User Function HideHist( oView )
+
+	Local oModel := oView:GetModel()
+
+	// Cópia é uma operação de inclusão tbm
+	If oModel:GetOperation() == MODEL_OPERATION_INSERT
+		oView:HideFolder( 'FOLDER', 'Histórico de Aprovação', 2 )
+	EndIf
+
+Return
+
+User Function ZB4Activate( oModel )
+
+	Local oModelZB4 := oModel:GetModel( "ZB4MASTER" )
+
+	If oModel:IsCopy()
+
+		oModelZB4:LoadValue( "ZB4_REV"   , "01" )
+		oModelZB4:LoadValue( "ZB4_STATUS", STATUS_RASCUNHO )
+		oModelZB4:LoadValue( "ZB4_TICKET", "" )
+		oModelZB4:LoadValue( "ZB4_TASK"  , "" )
+		oModelZB4:LoadValue( "ZB4_USRAPR", "" )
+		oModelZB4:LoadValue( "ZB4_DTAPR" , CToD("") )
+		oModelZB4:LoadValue( "ZB4_HRAPR" , "" )
+		oModelZB4:LoadValue( "ZB4_USRINC", RetCodUsr() )
+
+	EndIf
 
 Return .T.
