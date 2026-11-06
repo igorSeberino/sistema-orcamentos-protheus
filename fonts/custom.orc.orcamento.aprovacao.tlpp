@@ -409,11 +409,13 @@ User Function VldAprovador()
     Local cQuery := U_QuerySet( "ZB3", {"ZB3_ATIVO"}, { {"ZB3_USER = ", cUser} } )
     Local cAliasQry := MPSysOpenQuery(cQuery)
 
-    If cUser == ZB4->ZB4_USRINC
-        Help( , , "ZORCA05", , "Aprovador deve ser diferente do criador.", 1, 0 )
-        lRet := .F.
-    ElseIf (cAliasQry)->ZB3_ATIVO == '2'
-        Help( , , "ZORCA05", , "Aprovador inativo.", 1, 0 )
+    If !(cAliasQry)->(EoF()) .And. (cAliasQry)->ZB3_ATIVO == '2'
+        If ZB4->ZB4_STATUS == STATUS_ENVIADO .And. cUser == ZB4->ZB4_USRINC
+            Help( , , "ZORCA05", , "Aprovador deve ser diferente do criador.", 1, 0 )
+            lRet := .F.
+        EndIf
+    Else
+        Help( , , "ZORCA05", , "Usuário não é aprovador ativo.", 1, 0 )
         lRet := .F.
     EndIf
 

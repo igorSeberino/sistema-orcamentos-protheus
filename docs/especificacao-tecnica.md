@@ -358,13 +358,13 @@ São sete etapas. Cada uma acrescenta um padrão MVC sobre a anterior, e só é 
 
 **Critérios de aceite:**
 
-* ☐ Incluir, alterar, visualizar e excluir funcionam nas três rotinas.  
-* ☐ Código de Área/Definição e usuário do Aprovador não aceitam duplicidade.  
-* ☐ Aprovador com usuário inexistente é recusado. O nome aparece ao informar o usuário.  
-* ☐ Na inclusão do Aprovador, o nome começa vazio, e não com o nome do registro posicionado no browse.  
-* ☐ A legenda diferencia ativo e inativo.  
-* ☐ Exclusão de código em uso é bloqueada (RN09/RN10). Testar depois que a Etapa 2 existir.  
-* ☐ O ID do modelo é diferente do nome do fonte (ex.: ZORCA01M).
+* ◼ Incluir, alterar, visualizar e excluir funcionam nas três rotinas.  
+* ◼ Código de Área/Definição e usuário do Aprovador não aceitam duplicidade.  
+* ◼ Aprovador com usuário inexistente é recusado. O nome aparece ao informar o usuário.  
+* ◼ Na inclusão do Aprovador, o nome começa vazio, e não com o nome do registro posicionado no browse.  
+* ◼ A legenda diferencia ativo e inativo.  
+* ◼ Exclusão de código em uso é bloqueada (RN09/RN10). Testar depois que a Etapa 2 existir.  
+* ◼ O ID do modelo é diferente do nome do fonte (ex.: ZORCA01M).
 
 ### **Etapa 2 – Orçamento e Itens (pai e filho)**
 
@@ -374,13 +374,13 @@ São sete etapas. Cada uma acrescenta um padrão MVC sobre a anterior, e só é 
 
 **Critérios de aceite:**
 
-* ☐ O número é gerado automaticamente e não se perde nem se repete ao cancelar uma inclusão.  
-* ☐ O item é incremental (001, 002...) e não se repete no mesmo orçamento.  
-* ☐ Definição e Área inativas são recusadas, e as descrições aparecem ao informar o código.  
-* ☐ As descrições virtuais aparecem corretas ao reabrir o orçamento, inclusive em linhas novas adicionadas na alteração.  
-* ☐ Validade menor que a data é recusada.  
-* ☐ Não é possível gravar orçamento sem pelo menos um item.  
-* ☐ Excluir o orçamento remove os itens.
+* ◼ O número é gerado automaticamente e não se perde nem se repete ao cancelar uma inclusão.  
+* ◼ O item é incremental (001, 002...) e não se repete no mesmo orçamento.  
+* ◼ Definição e Área inativas são recusadas, e as descrições aparecem ao informar o código.  
+* ◼ As descrições virtuais aparecem corretas ao reabrir o orçamento, inclusive em linhas novas adicionadas na alteração.  
+* ◼ Validade menor que a data é recusada.  
+* ◼ Não é possível gravar orçamento sem pelo menos um item.  
+* ◼ Excluir o orçamento remove os itens.
 
 ### **Etapa 3 – Atividades (pai, filho e neto)**
 
@@ -390,14 +390,14 @@ São sete etapas. Cada uma acrescenta um padrão MVC sobre a anterior, e só é 
 
 **Critérios de aceite:**
 
-* ☐ Digitar 1,5 dia com Horas/Dia 8,50 gera 12,75 horas. Digitar 1 hora gera 0,1176 dia.  
-* ☐ O valor digitado pelo usuário nunca é alterado pelo recálculo do campo correspondente (sem ida e volta).  
-* ☐ Os totais da atividade, do item e do cabeçalho se atualizam ao digitar, ao excluir e ao recuperar linhas de atividade e de item.  
-* ☐ Trocar o Horas/Dia com horas lançadas faz a pergunta da RN05 e as duas respostas funcionam.  
-* ☐ Atividade com total zero não é gravada.  
-* ☐ Ao trocar de item, a grid mostra só as atividades daquele item.  
-* ☐ Excluir um item remove as atividades dele.  
-* ☐ Os totais gravados no banco batem com a soma das linhas, mesmo que algo falhe na tela (recálculo na pós-validação do modelo).
+* ◼ Digitar 1,5 dia com Horas/Dia 8,50 gera 12,75 horas. Digitar 1 hora gera 0,1176 dia.  
+* ◼ O valor digitado pelo usuário nunca é alterado pelo recálculo do campo correspondente (sem ida e volta).  
+* ◼ Os totais da atividade, do item e do cabeçalho se atualizam ao digitar, ao excluir e ao recuperar linhas de atividade e de item.  
+* ◼ Trocar o Horas/Dia com horas lançadas faz a pergunta da RN05 e as duas respostas funcionam.  
+* ◼ Atividade com total zero não é gravada.  
+* ◼ Ao trocar de item, a grid mostra só as atividades daquele item.  
+* ◼ Excluir um item remove as atividades dele.  
+* ◼ Os totais gravados no banco batem com a soma das linhas, mesmo que algo falhe na tela (recálculo na pós-validação do modelo).
 
 ### **Etapa 4 – Pastas, histórico e regras por status**
 
@@ -407,12 +407,12 @@ São sete etapas. Cada uma acrescenta um padrão MVC sobre a anterior, e só é 
 
 **Critérios de aceite:**
 
-* ☐ Alterar ou excluir orçamento fora de Rascunho mostra mensagem e não abre a tela.  
-* ☐ A pasta Histórico fica oculta na inclusão, cópia e nova revisão, e não permite inserir, alterar ou excluir linhas.  
-* ☐ Copiar gera novo número, revisão 01, Rascunho, sem ticket, task e dados de aprovação.  
-* ☐ Nova Revisão mantém o número, soma 1 na revisão e só é permitida a partir de Aprovado ou Reprovado.  
-* ☐ Nova Revisão é recusada se já existir revisão em Rascunho ou Enviado para o mesmo número.  
-* ☐ O histórico nunca é copiado.
+* ◼ Alterar ou excluir orçamento fora de Rascunho mostra mensagem e não abre a tela.  
+* ◼ A pasta Histórico fica oculta na inclusão, cópia e nova revisão, e não permite inserir, alterar ou excluir linhas.  
+* ◼ Copiar gera novo número, revisão 01, Rascunho, sem ticket, task e dados de aprovação.  
+* ◼ Nova Revisão mantém o número, soma 1 na revisão e só é permitida a partir de Aprovado ou Reprovado.  
+* ◼ Nova Revisão é recusada se já existir revisão em Rascunho ou Enviado para o mesmo número.  
+* ◼ O histórico nunca é copiado.
 
 ### **Etapa 5 – Fluxo de aprovação**
 
@@ -422,13 +422,13 @@ São sete etapas. Cada uma acrescenta um padrão MVC sobre a anterior, e só é 
 
 **Critérios de aceite:**
 
-* ☐ Enviar só funciona em Rascunho, com todos os itens tendo pelo menos uma atividade e total maior que zero.  
-* ☐ Aprovar, Reprovar e Estornar não aparecem no menu para quem não é aprovador ativo, e são recusados mesmo se chamados por outro caminho.  
-* ☐ O criador do orçamento é recusado como aprovador (RN14).  
-* ☐ Reprovar e Estornar sem observação são recusados.  
-* ☐ Cada ação grava uma linha no ZB7 com sequência, usuário, data, hora e observação.  
-* ☐ Se a gravação do histórico falhar, o status não muda (mesma transação).  
-* ☐ Dois usuários aprovando ao mesmo tempo: só um consegue, o outro recebe mensagem de status alterado.
+* ◼ Enviar só funciona em Rascunho, com todos os itens tendo pelo menos uma atividade e total maior que zero.  
+* ◼ Aprovar, Reprovar e Estornar não aparecem no menu para quem não é aprovador ativo, e são recusados mesmo se chamados por outro caminho.  
+* ◼ O criador do orçamento é recusado como aprovador (RN14).  
+* ◼ Reprovar e Estornar sem observação são recusados.  
+* ◼ Cada ação grava uma linha no ZB7 com sequência, usuário, data, hora e observação.  
+* ◼ Se a gravação do histórico falhar, o status não muda (mesma transação).  
+* ◼ Dois usuários aprovando ao mesmo tempo: só um consegue, o outro recebe mensagem de status alterado.
 
 ### **Etapa 6 – Importação de planilhas (rotina automática pelo modelo)**
 

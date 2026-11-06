@@ -100,6 +100,8 @@ User Function ModelDef()
 	// Condiciona a edição do orçamento ao status de rascunho
 	oModel:SetVldActive( { |oModel| U_VldActivate( @oModel ) } )
 
+	oModel:SetCommit({|oModel| U_ModelCommit(oModel)})
+
 Return oModel
 
 /*/{Protheus.doc} ViewDef
@@ -180,9 +182,12 @@ User Function MenuDef()
 	ADD OPTION aRotina Title 'Imprimir' Action cActionString OPERATION 8 ACCESS 0
 	ADD OPTION aRotina Title 'Copiar' Action cActionString OPERATION 9 ACCESS 0
 	ADD OPTION aRotina Title 'Enviar Rascunho' Action ZORCA05 + ".U_ZORCA05( 'ENV' )" OPERATION 5 ACCESS 0
-	ADD OPTION aRotina Title 'Aprovação' Action ZORCA05 + ".U_ZORCA05( 'APR' )" OPERATION 5 ACCESS 0
 	ADD OPTION aRotina Title 'Novo Rascunho' Action ZORCA05 + ".U_ZORCA05( 'NOV' )" OPERATION 5 ACCESS 0
-	ADD OPTION aRotina Title 'Estornar' Action ZORCA05 + ".U_ZORCA05( 'EST' )" OPERATION 5 ACCESS 0
+
+	If U_VldAprovador()
+		ADD OPTION aRotina Title 'Aprovação' Action ZORCA05 + ".U_ZORCA05( 'APR' )" OPERATION 5 ACCESS 0
+		ADD OPTION aRotina Title 'Estornar' Action ZORCA05 + ".U_ZORCA05( 'EST' )" OPERATION 5 ACCESS 0
+	EndIf
 
 Return aRotina
 
@@ -508,3 +513,52 @@ User Function ZB4Activate( oModel )
 	EndIf
 
 Return .T.
+
+User Function ModelCommit( oModel )
+
+	Local oModelZB5 := oModel:GetModel("ZB5DETAIL")
+	Local oModelZB6 := oModel:GetModel("ZB6DETAIL")
+	Local n1 as numeric
+	Local n2 as numeric
+	Local nValue as numeric
+
+	For n1 := 1 to oModelZB5:Length()
+
+		If !oModelZB5:IsDeleted(n1)
+
+            oModelZB5:GoLine(n1)
+
+            // Percorre cada atividade do item
+			For n2 := 1 to oModelZB6:Length()
+
+				If !oModelZB6:IsDeleted(n2) 
+
+					oModelZB6:GoLine(n2)
+					nValue := oModelZB6:GetValue("ZB6_TTHRNM")
+
+					If nValue == 0
+						oModelZB6:DeleteLine()
+					EndIf
+				EndIf
+
+			Next n2
+
+		EndIf
+
+	Next n1
+
+	FWFormCommit( oModel )
+
+Return .T.
+
+User Function VldAprovador()
+
+	Local lRet := .F.
+    Local cQuery := U_QuerySet( "ZB3", {"ZB3_USER"}, {{"ZB3.ZB3_USER = ", RetCodUsr()}} )
+    Local cAliasQry := MPSysOpenQuery(cQuery)
+
+    If !(cAliasQry)->(EoF())
+        lRet := .T.
+    EndIf
+
+Return lRet

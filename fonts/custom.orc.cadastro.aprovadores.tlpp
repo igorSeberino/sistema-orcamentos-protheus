@@ -104,8 +104,48 @@ User Function MenuDef()
     ADD OPTION aRotina Title 'Visualizar' Action cActionString OPERATION 2 ACCESS 0
 	ADD OPTION aRotina Title 'Incluir' Action cActionString OPERATION 3 ACCESS 0
 	ADD OPTION aRotina Title 'Alterar' Action cActionString OPERATION 4 ACCESS 0
-	ADD OPTION aRotina Title 'Excluir' Action cActionString OPERATION 5 ACCESS 0
+	ADD OPTION aRotina Title 'Excluir' Action NAMESPACE + ".U_ZORCA03Exc()" OPERATION 5 ACCESS 0
 	ADD OPTION aRotina Title 'Imprimir' Action cActionString OPERATION 8 ACCESS 0
 	ADD OPTION aRotina Title 'Copiar' Action cActionString OPERATION 9 ACCESS 0
 
 Return aRotina
+
+User Function ZORCA03Exc()
+
+    Local oModel := FWLoadModel(NAMESPACE + ".U_ZORCA03")
+
+    // Busca registros da ZB5 associados ao registro da ZB1
+    Local cQuery := U_QuerySet( "ZB4", {"ZB4_COD"}, { {"ZB4.ZB4_USRINC = ", ZB3->ZB3_USER} })
+    Local cAliasQry := MPSysOpenQuery(cQuery)
+
+    If (cAliasQry)->(EoF())
+        cQuery := U_QuerySet( "ZB4", {"ZB4_COD"}, { {"ZB4.ZB4_USRAPR = ", ZB3->ZB3_USER} })
+        cAliasQry := MPSysOpenQuery(cQuery)
+    EndIf
+
+    // Se tiver registro
+    If !(cAliasQry)->(EoF())
+
+        // Se estiver ativo
+        If ZB3->ZB3_ATIVO == "1"
+
+            // Pergunta se deseja inativar
+            If MsgYesNo("Exclusão indisponível, aprovador tem ações em orçamentos. Deseja inativar?", "Exclusão Indisponível")
+                oModel:SetOperation(MODEL_OPERATION_UPDATE)
+                oModel:Activate()
+                oModel:SetValue("ZB3MASTER", "ZB3_ATIVO", "2")
+                oModel:VldData()
+                oModel:CommitData()
+                oModel:DeActivate()
+                
+            EndIf
+        Else
+            Aviso("ATENÇÃO", "O aprovador já está inativo, sua exclusão não pode ser efetuada pois ele tem ações em orçamentos", {"Ok"})
+        EndIf
+    Else
+        FWExecView("Excluir", NAMESPACE + ".U_ZORCA03", MODEL_OPERATION_DELETE)
+    EndIf
+
+    (cAliasQry)->(dbCloseArea())
+
+Return
