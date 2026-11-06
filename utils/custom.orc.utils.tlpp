@@ -121,7 +121,7 @@ User Function QuerySet( cAlias, aParamsSelect, aParamsWhere )
         For nI := 1 to Len(aParamsWhere)
             If nI == 1
                 cQueryBase += " WHERE " + cAlias + ".D_E_L_E_T_ = ' ' "
-                cQueryBase += " AND " + cAlias + "_FILIAL = " + xFilial(cAlias)
+                cQueryBase += " AND " + cAlias + "_FILIAL = ? "
                 cQueryBase += " AND " + aParamsWhere[nI][1] + " ? "
             Else
                 cQueryBase += " AND " + aParamsWhere[nI][1] + " ? "
@@ -135,25 +135,27 @@ User Function QuerySet( cAlias, aParamsSelect, aParamsWhere )
 
     oStmt:SetQuery(cQueryBase)
 
+    oStmt:SetString(1, xFilial(cAlias))
+
     // Preenchimento dinâmico dos parâmetros
     // de busca    
     For nI := 1 to Len(aParamsWhere)
 
         If ValType(aParamsWhere[nI][2]) == "C"
 
-            oStmt:SetString(nI, aParamsWhere[nI][2])
+            oStmt:SetString(nI + 1, aParamsWhere[nI][2])
 
         ElseIf ValType(aParamsWhere[nI][2]) == "N"
 
-            oStmt:SetNumeric(nI, aParamsWhere[nI][2])
+            oStmt:SetNumeric(nI + 1, aParamsWhere[nI][2])
 
         ElseIf ValType(aParamsWhere[nI][2]) == "D"
 
-            oStmt:SetDate(nI, aParamsWhere[nI][2])
+            oStmt:SetDate(nI + 1, aParamsWhere[nI][2])
 
         ElseIf ValType(aParamsWhere[nI][2]) == "L"
 
-            oStmt:SetLogical(nI, aParamsWhere[nI][2])
+            oStmt:SetLogical(nI + 1, aParamsWhere[nI][2])
 
         EndIf
 

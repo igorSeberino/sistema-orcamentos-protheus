@@ -186,6 +186,10 @@ User Function Revisar( oModal, oPanel )
     	Return .F.
     EndIf
 
+    If !U_VldAprovador()
+    	Return .F.
+    EndIf
+
     nOpcao := U_MontaTela( oModal, oPanel, "APR", @cObs )
 
     If nOpcao != Nil
@@ -292,6 +296,10 @@ User Function Estornar( oModal, oPanel )
     	Return .F.
     EndIf
 
+    If !U_VldAprovador()
+    	Return .F.
+    EndIf
+
     nOpcao := U_MontaTela( oModal, oPanel, "EST", @cObs )
 
     If nOpcao != Nil
@@ -391,5 +399,22 @@ User Function GravaHist(  cAcao, cObs as character )
     EndIf
 
     RestArea( aArea )
+
+Return lRet
+
+User Function VldAprovador()
+
+    Local lRet := .T.
+    Local cUser := RetCodUsr()
+    Local cQuery := U_QuerySet( "ZB3", {"ZB3_ATIVO"}, { {"ZB3_USER = ", cUser} } )
+    Local cAliasQry := MPSysOpenQuery(cQuery)
+
+    If cUser == ZB4->ZB4_USRINC
+        Help( , , "ZORCA05", , "Aprovador deve ser diferente do criador.", 1, 0 )
+        lRet := .F.
+    ElseIf (cAliasQry)->ZB3_ATIVO == '2'
+        Help( , , "ZORCA05", , "Aprovador inativo.", 1, 0 )
+        lRet := .F.
+    EndIf
 
 Return lRet
