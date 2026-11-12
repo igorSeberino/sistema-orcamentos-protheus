@@ -1,0 +1,8 @@
+Tipo;Item;Demanda ou Sub;Atividade;Definição;Área;Doc Dias;Dev Dias;Anál Dias;Vald Dias
+I;001;Relatório de faturamento;;;003;;;;
+A;001;01;Montar query;;;0;1;0;0
+A;001;02;Layout TReport;;;0,5;0,5;0;0,5
+I;002;Job de integração;;002;003;;;;
+A;002;01;Agendar job;;;0;2;0;0
+
+

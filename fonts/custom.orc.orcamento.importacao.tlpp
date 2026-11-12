@@ -1,0 +1,286 @@
+#include "totvs.ch"
+#include "fwmvcdef.ch"
+
+namespace custom.orc.orcamento.importacao
+using namespace custom.orc.utils
+
+#define ZORCA04 "custom.orc.orcamento.manutencao"
+
+/*/{Protheus.doc} ZORCA06
+	Importação de orçamento a partir de CSV
+	
+    @author igor seberino
+	
+    @type user function
+	
+    @since 06/11/2026
+/*/
+User Function ZORCA06()
+
+    Local cPath  := ""
+    Local aPergs := {}
+    Local aRet   := {}
+    Local oFile as object
+
+    // Recebe o caminho do arquivo
+    cPath := tFileDialog( "Arquivos CSV (*.csv)|*.csv", "Selecione o arquivo de importação", , , .F. )
+
+    If Empty(cPath)
+        Help( , , "ZORCA06", , "Nenhum arquivo selecionado.", 1, 0 )
+        Return
+    EndIf
+
+    // Recebe o objeto do arquivo
+    oFile := FWFileReader():New(cPath)
+
+    If !oFile:Open()
+        Help( , , "ZORCA06", , "Não foi possível abrir o arquivo " + cPath, 1, 0 )
+        Return
+    EndIf
+
+    // Define campos pedidos ao usuário para inclusão em ZB4
+    { /*nTipo, 1=Campo de Digitação(Get)*/, /*Texto na tela*/, /*Valor Inicial*/, /*Picture(Mask)*/, /*Validação*/, /*F3*/, /*When(Editável)*/, /*Largura*/, /*Obrigatório*/ }
+    aAdd( aPergs, { 1, "Cliente"         , Space(TamSX3("ZB4_CLIENT")[1])   , ""        , "", "SA1", "", 50, .T. } )
+    aAdd( aPergs, { 1, "Loja"            , Space(TamSX3("ZB4_LOJA")[1])     , ""        , "", ""   , "", 20, .T. } )
+    aAdd( aPergs, { 1, "Título"          , Space(TamSX3("ZB4_TITULO")[1])   , ""        , "", ""   , "", 90, .T. } )
+    aAdd( aPergs, { 1, "Horas/Dia"       , "08:30", "99:99", "", ""   , "", 30, .T. } )
+    aAdd( aPergs, { 1, "Ticket"          , Space(TamSX3("ZB4_TICKET")[1])   , ""        , "", ""   , "", 50, .F. } )
+    aAdd( aPergs, { 1, "Task"            , Space(TamSX3("ZB4_TASK")[1])     , ""        , "", ""   , "", 50, .F. } )
+    aAdd( aPergs, { 1, "Definição padrão", Space(TamSX3("ZB5_DEFIN")[1])    , ""        , "", "ZB2", "", 20, .T. } )
+
+    // Tenta abrir uma janela para preenchimento de campos da ZB4
+    If !ParamBox( aPergs, "Importação de orçamento", @aRet, , , , , , , , .F. )
+        Return
+    EndIf
+
+    U_Importar( cPath, aRet, oFile )
+
+Return
+
+/*/{Protheus.doc} Importar
+	Lê o CSV e grava o orçamento pelo modelo do ZORCA04, sem tela
+
+    @author igor seberino
+	
+    @type static function
+    
+	@param cPath, character, caminho do CSV
+	
+    @param aRet , array    , respostas do ParamBox
+/*/
+User Function Importar( cPath as character, aRet as array, oFile as object )
+
+    Local oModel  := FWLoadModel(ZORCA04 + ".U_ZORCA04")
+    Local oZB5    as object
+    Local oZB6    as object
+    Local cLinha  as character
+    Local cItem   := ""
+    Local cDefin  as character
+    Local aCol    as array
+    Local aLog    := {}
+    Local nLinha  := 0
+    Local nItens  := 0
+    Local nAtiv   := 0
+    Local lItemOk := .F.
+    Local lOk     as logical
+
+    oModel:SetOperation(MODEL_OPERATION_INSERT)
+
+    If !oModel:Activate()
+        Help( , , "ZORCA06", , "Ocorreu um erro inesperado.", 1, 0 )
+        Return
+    EndIf
+
+    oZB5 := oModel:GetModel("ZB5DETAIL")
+    oZB6 := oModel:GetModel("ZB6DETAIL")
+
+    // Cabeçalho (ZB4) com os dados do ParamBox - Horas/Dia antes das atividades
+    lOk := U_SetCampo( oModel, "ZB4MASTER", "ZB4_CLIENT", aRet[1], 0, aLog ) .And. ;
+           U_SetCampo( oModel, "ZB4MASTER", "ZB4_LOJA"  , aRet[2], 0, aLog ) .And. ;
+           U_SetCampo( oModel, "ZB4MASTER", "ZB4_TITULO", aRet[3], 0, aLog ) .And. ;
+           U_SetCampo( oModel, "ZB4MASTER", "ZB4_HRDIA" , aRet[4], 0, aLog ) .And. ;
+           U_SetCampo( oModel, "ZB4MASTER", "ZB4_TICKET", aRet[5], 0, aLog ) .And. ;
+           U_SetCampo( oModel, "ZB4MASTER", "ZB4_TASK"  , aRet[6], 0, aLog )
+
+    If !lOk
+        oFile:Close()
+        oModel:DeActivate()
+        U_MostraLog(aLog)
+        Return
+    EndIf
+
+    While oFile:HasLine()
+
+        cLinha := oFile:GetLine()
+        nLinha++
+
+        // Linha 1 = cabeçalho do CSV. Linha vazia = fim de arquivo do Excel
+        If nLinha == 1 .Or. Empty(cLinha)
+            Loop
+        EndIf
+
+        aCol := StrTokArr2( cLinha, ";", .T. )
+
+        If Len(aCol) < 10 
+            aAdd( aLog, U_TxtLinha(nLinha) + "quantidade de colunas inválida (esperado 10)." )
+            Loop
+        EndIf
+
+        Do Case
+
+            Case aCol[1] == "I"
+
+                // A 1ª linha da grid já existe vazia no Activate
+                If nItens > 0
+                    oZB5:AddLine()
+                EndIf
+
+                nItens++
+                nAtiv  := 0
+                cItem  := StrZero( Val(aCol[2]), 3 )
+                cDefin := IIf( Empty(aCol[5]), aRet[7], aCol[5] )
+
+                lItemOk := U_SetCampo( oModel, "ZB5DETAIL", "ZB5_ITEM"  , cItem  , nLinha, aLog ) .And. ;
+                           U_SetCampo( oModel, "ZB5DETAIL", "ZB5_DEMAND", aCol[3], nLinha, aLog ) .And. ;
+                           U_SetCampo( oModel, "ZB5DETAIL", "ZB5_DEFIN" , cDefin , nLinha, aLog ) .And. ;
+                           U_SetCampo( oModel, "ZB5DETAIL", "ZB5_AREA"  , aCol[6], nLinha, aLog )
+
+                If !lItemOk
+                    oZB5:DeleteLine()
+                EndIf
+
+            Case aCol[1] == "A"
+
+                If !lItemOk
+                    aAdd( aLog, U_TxtLinha(nLinha) + "atividade ignorada, o item " + aCol[2] + " foi rejeitado." )
+
+                ElseIf StrZero( Val(aCol[2]), 3 ) != cItem
+                    aAdd( aLog, U_TxtLinha(nLinha) + "atividade do item " + aCol[2] + ", mas o último item lido é " + cItem + "." )
+
+                Else
+                    // ZB6 é filha da ZB5: a grid já está na linha do item atual
+                    If nAtiv > 0
+                        oZB6:AddLine()
+                    EndIf
+
+                    nAtiv++
+
+                    lOk := U_SetCampo( oModel, "ZB6DETAIL", "ZB6_SUB" , StrZero( Val(aCol[3]), 3 ), nLinha, aLog ) .And. ;
+                           U_SetCampo( oModel, "ZB6DETAIL", "ZB6_ATIV", aCol[4]         , nLinha, aLog ) .And. ;
+                           U_SetCampo( oModel, "ZB6DETAIL", "ZB6_DDOC", U_CsvNum(aCol[7]) , nLinha, aLog ) .And. ;
+                           U_SetCampo( oModel, "ZB6DETAIL", "ZB6_DDEV", U_CsvNum(aCol[8]) , nLinha, aLog ) .And. ;
+                           U_SetCampo( oModel, "ZB6DETAIL", "ZB6_DANA", U_CsvNum(aCol[9]) , nLinha, aLog ) .And. ;
+                           U_SetCampo( oModel, "ZB6DETAIL", "ZB6_DVAL", U_CsvNum(aCol[10]), nLinha, aLog )
+
+                    If !lOk
+                        oZB6:DeleteLine()
+                    EndIf
+                EndIf
+
+            Otherwise
+                aAdd( aLog, U_TxtLinha(nLinha) + "tipo de linha inválido [" + aCol[1] + "], esperado I ou A." )
+
+        EndCase
+
+    EndDo
+
+    oFile:Close()
+
+    If oModel:VldData() .And. oModel:CommitData()
+        aIns( aSize(aLog, Len(aLog) + 1), 1 )
+        aLog[1] := "Orçamento gerado: " + oModel:GetValue("ZB4MASTER", "ZB4_COD") + "/" + oModel:GetValue("ZB4MASTER", "ZB4_REV")
+    Else
+        aAdd( aLog, "Orçamento NÃO gravado: " + U_ErroModel(oModel) )
+    EndIf
+
+    oModel:DeActivate()
+
+    U_MostraLog(aLog)
+
+Return
+
+/*/{Protheus.doc} SetCampo
+	SetValue no modelo; se a validação recusar, registra o motivo no log
+
+    @author igor seberino
+    
+	@type static function
+	
+    @return logical, .T. se o valor foi aceito
+/*/
+User Function SetCampo( oModel as object, cSubModel, cCampo, xValor, nLinha, aLog )
+
+    If !(oModel:SetValue( cSubModel, cCampo, xValor ))
+        aAdd( aLog, U_TxtLinha(nLinha) + AllTrim(cCampo) + " - " + U_ErroModel(oModel) )
+        Return .F.
+    EndIf
+
+Return .T.
+
+/*/{Protheus.doc} ErroModel
+	Mensagem + solução do último erro do modelo
+	
+    @author igor seberino
+
+    @type static function
+
+	@return character
+/*/
+User Function ErroModel( oModel as object ) as character
+
+    Local aErro := oModel:GetErrorMessage()
+    Local cMsg  := AllTrim( cValToChar(aErro[6]) )
+
+    If !Empty(aErro[7])
+        cMsg += " (" + AllTrim( cValToChar(aErro[7]) ) + ")"
+    EndIf
+
+Return cMsg
+
+/*/{Protheus.doc} CsvNum
+	Converte número do CSV (decimal com vírgula) para numérico
+
+    @author igor seberino
+	
+    @type static function
+
+	@return numeric
+/*/
+User Function CsvNum( cValor as character ) as numeric
+Return Val( StrTran( AllTrim(cValor), ",", "." ) )
+
+/*/{Protheus.doc} TxtLinha
+	Prefixo do log: "Linha N: " ou "Parâmetros: " (nLinha = 0)
+
+    @author igor seberino
+
+	@type static function
+	
+    @return character
+/*/
+User Function TxtLinha( nLinha as numeric ) as character
+Return IIf( nLinha == 0, "Parâmetros: ", "Linha " + cValToChar(nLinha) + ": " )
+
+/*/{Protheus.doc} MostraLog
+	Exibe o resultado da importação
+
+    @author igor seberino
+    
+	@type static function
+/*/
+User Function MostraLog( aLog as array )
+
+    Local cTexto := ""
+    Local nI     as numeric
+
+    For nI := 1 To Len(aLog)
+        cTexto += aLog[nI] + CRLF
+    Next nI
+
+    If Empty(cTexto)
+        cTexto := "Nenhuma linha processada."
+    EndIf
+
+    Aviso( "ZORCA06 - Resultado da importação", cTexto, { "OK" }, 3 )
+
+Return

@@ -1,0 +1,13 @@
+Tipo;Item;Demanda ou Sub;Atividade;Definição;Área;Doc Dias;Dev Dias;Anál Dias;Vald Dias
+I;001;Integração de pedidos;;003;003;;;;
+A;001;01;Criar tela;;;0,5;2;0;0,5
+A;002;01;Atividade de item que não é o último;;;1;0;0;0
+X;003;Tipo de linha inválido;;001;003;;;;
+I;003;Colunas faltando;;001
+I;004;Definição inexistente;;ZZZ;003;;;;
+A;004;01;Atividade de item rejeitado;;;1;0;0;0
+I;005;Área inexistente;;003;ZZZ;;;;
+I;006;Item válido depois dos erros;;003;003;;;;
+A;006;01;Implementar PE;;;0;1,5;0;0,5
+A;006;02;Dias negativos;;;0;-1;0;0
+;;;;;;;;;

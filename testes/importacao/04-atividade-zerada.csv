@@ -1,0 +1,4 @@
+Tipo;Item;Demanda ou Sub;Atividade;Definição;Área;Doc Dias;Dev Dias;Anál Dias;Vald Dias
+I;001;Ajuste de faturamento;;003;003;;;;
+A;001;01;Atividade válida;;;0;1;0;0
+A;001;02;Atividade sem horas;;;0;0;0;0
