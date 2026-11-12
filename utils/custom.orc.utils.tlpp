@@ -432,3 +432,16 @@ User Function VldAprov( cUser )
     EndIf
 
 Return .T.
+
+User Function VldHours( cHour )
+
+	Local nMM as numeric
+
+	// Captura minuto do campo
+	nMM := Val( Right( AllTrim(cHour) , 2 ) )
+
+    If nMM < 0 .Or. nMM > 59
+        Return (Help( , , " HELP", , "Valor de minutos inválido", 1, 0 ), .F.)
+    EndIf
+
+Return .T.
