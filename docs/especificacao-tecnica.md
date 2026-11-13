@@ -438,11 +438,11 @@ São sete etapas. Cada uma acrescenta um padrão MVC sobre a anterior, e só é 
 
 **Critérios de aceite:**
 
-* ☐ Um CSV válido gera um orçamento em Rascunho com os mesmos totais que a planilha original.  
-* ☐ Todas as regras das Etapas 2 e 3 valem na importação, sem nenhuma validação duplicada no fonte de importação.  
-* ☐ Linha sem Definição usa a Definição padrão informada.  
-* ☐ Linhas inválidas aparecem no log com número da linha e motivo.  
-* ☐ Nenhuma pergunta ou mensagem de tela aparece durante a gravação.
+* ◼ Um CSV válido gera um orçamento em Rascunho com os mesmos totais que a planilha original.  
+* ◼ Todas as regras das Etapas 2 e 3 valem na importação, sem nenhuma validação duplicada no fonte de importação.  
+* ◼ Linha sem Definição usa a Definição padrão informada.  
+* ◼ Linhas inválidas aparecem no log com número da linha e motivo.  
+* ◼ Nenhuma pergunta ou mensagem de tela aparece durante a gravação.
 
 ### **Etapa 7 – Consulta histórica e relatório**
 
