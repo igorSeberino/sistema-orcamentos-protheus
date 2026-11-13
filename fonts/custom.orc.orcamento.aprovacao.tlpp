@@ -111,7 +111,7 @@ User Function MontaTela( oModal, oPanel, cAction, cObs )
 
 
     // Botao dentro do painel
-    TButton():New(095, 010, "Visualizar Orçamento", oPanel, {|| }, 80, 15, , , , .T.)
+    TButton():New(095, 010, "Visualizar Orçamento", oPanel, {|| FWExecView("Visualizar", FormatStr("VIEWDEF.%c.ZORCA04", ZORCA04), MODEL_OPERATION_VIEW) }, 80, 15, , , , .T.)
 
     // Botões da barra inferior
     oModal:AddOkButton( bCode, "Confirmar" )
