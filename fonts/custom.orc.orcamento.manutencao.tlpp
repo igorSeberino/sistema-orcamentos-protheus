@@ -10,6 +10,7 @@ using namespace custom.orc.utils
 #define UTILS "custom.orc.utils"
 #define ZORCA05 "custom.orc.orcamento.aprovacao"
 #define ZORCA06 "custom.orc.orcamento.importacao"
+#define ZORCA07 "custom.orc.consulta.historico"
 
 #define STATUS_RASCUNHO  "1"
 #define STATUS_ENVIADO   "2"
@@ -191,6 +192,7 @@ User Function MenuDef()
 	EndIf
 
 	ADD OPTION aRotina Title 'Importar CSV' Action ZORCA06 + ".U_ZORCA06()" OPERATION 3 ACCESS 0
+	ADD OPTION aRotina Title 'Consulta Histórica' Action ZORCA07 + ".U_ZORCA07()" OPERATION 3 ACCESS 0
 
 Return aRotina
 

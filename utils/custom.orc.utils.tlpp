@@ -400,7 +400,7 @@ User Function VldArea( cArea )
     Local cAliasQry := MPSysOpenQuery(cQuery)
 
     If (cAliasQry)->(EoF())
-        Return (Help( , , " HELP", , "Definição não existe ou está inativa", 1, 0 ), .F.)
+        Return (Help( , , " HELP", , "Área não existe ou está inativa", 1, 0 ), .F.)
     EndIf
 
 Return .T.
