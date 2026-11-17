@@ -48,7 +48,7 @@ User Function MontaTela( oModal, oPanel, cAction, cObs )
         ' <font size="2"><b>TICKET: </b> ' + ZB4->ZB4_TICKET +  ' </font> ' +;
         ' <font size="2" > <b> TASK: </b> ' + ZB4->ZB4_TASK +  ' </font><br/><br/>' +;
         ' <font size="2"><b>CRIADO POR: </b> ' + ZB4->ZB4_USRINC +  ' </font> ' +;
-        ' <font size="2" > <b> TOTAL: </b> ' + U_NUMTOHOURS( ZB4->ZB4_TTHRNM, 10)  +  ' </font><br/><br/>'
+        ' <font size="2" > <b> TOTAL: </b> ' + U_NUMTOHOURS( ZB4->ZB4_TTHRNM)  +  ' </font><br/><br/>'
 
     If cAction == "APR"
 

@@ -178,10 +178,13 @@ Return cQueryRet
 /*/
 User Function HoursToNum( cHour ) 
 
-	Local nHH as numeric
-	Local nMM as numeric
-    Local nValue as numeric
-    Local nHourLength := Len(cHour) - 3
+	Local nHH         as numeric
+	Local nMM         as numeric
+    Local nValue      as numeric
+    Local nHourLength as numeric
+
+    cHour := StrTran( AllTrim( cHour ), ".", "" )
+    nHourLength := Len(AllTrim(cHour)) - 3
 
 	// Captura hora e minuto do campo
 	nHH := Val( Left( cHour, nHourLength ) )
@@ -203,14 +206,14 @@ Return nValue
 
 	@return logical
 /*/
-User Function NumToHours( nValue, nTam ) 
+User Function NumToHours( nValue ) 
 
-    Local cHour as character
-	Local nDecimais := nValue - Int(nValue)
+    Local nMinutos := Round( nValue * 60, 0 )        // arredonda o total em minutos
+    Local nHH      := Int( nMinutos / 60 )
+    Local nMM      := nMinutos % 60
+    Local cHH      := AllTrim( Transform( nHH, "@E 999,999,999" ) )
 
-    cHour := StrZero(Int(nValue), nTam - 3) + ":" + StrZero(Round(nDecimais * 60, 0), 2)
-
-Return cHour
+Return cHH + ":" + StrZero( nMM, 2 )
 
 /*/{Protheus.doc} TotalHrsCharSet
 	Habilita a edição do campo de total de horas, 
@@ -234,7 +237,7 @@ User Function TotalHrsCharSet( nTotal, cModel )
     // Habilita a edição 
 	oStruct:SetProperty( cField, MODEL_FIELD_WHEN, { || .T. } )
 
-	oModel:SetValue( cField, U_NumToHours(nTotal, 10) )
+	oModel:SetValue( cField, U_NumToHours(nTotal) )
 
     // Desabilita a edição
 	oStruct:SetProperty( cField, MODEL_FIELD_WHEN, { || .F. } )
@@ -301,10 +304,10 @@ User Function OnHrDayChange( nHrDia )
                             nAna := oModelZB6:GetValue("ZB6_DANA") * nHrDia
                             nVal := oModelZB6:GetValue("ZB6_DVAL") * nHrDia
 
-                            oModelZB6:SetValue( "ZB6_HDOC", U_NumToHours(nDoc, 8) )
-                            oModelZB6:SetValue( "ZB6_HDEV", U_NumToHours(nDev, 8) )
-                            oModelZB6:SetValue( "ZB6_HANA", U_NumToHours(nAna, 8) )
-                            oModelZB6:SetValue( "ZB6_HVAL", U_NumToHours(nVal, 8) )
+                            oModelZB6:SetValue( "ZB6_HDOC", U_NumToHours(nDoc) )
+                            oModelZB6:SetValue( "ZB6_HDEV", U_NumToHours(nDev) )
+                            oModelZB6:SetValue( "ZB6_HANA", U_NumToHours(nAna) )
+                            oModelZB6:SetValue( "ZB6_HVAL", U_NumToHours(nVal) )
 
 						EndIf
 
