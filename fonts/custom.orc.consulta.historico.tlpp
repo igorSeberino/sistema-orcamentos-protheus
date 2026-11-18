@@ -15,7 +15,7 @@ using namespace custom.orc.utils
 	
     @since 16/11/2026
 /*/
-User Function ZORCA07()
+User Function ZORCA07( cDef )
 
     Local oModal := FWDialogModal():New()
     Local oPanel := oModal:GetPanelMain()
@@ -33,7 +33,6 @@ User Function ZORCA07()
     Local aResumo := {}
     Local aDetTodos := {}
 
-    Local cDef     := Space( TamSX3("ZB5_DEFIN")[1] )
     Local cArea    := Space( TamSX3("ZB5_AREA")[1] )
     Local cCli     := Space( TamSX3("ZB4_CLIENT")[1] )
     Local dDateIni := CtoD("")
@@ -42,6 +41,10 @@ User Function ZORCA07()
     Local oFontTitle := TFont():New("Arial", , -20, , .T.)
     Local oFontSubt := TFont():New("Arial", , -16, , .T.)
     Local oFont := TFont():New("Arial", , -12)
+
+    If Empty(cDef)
+        cDef := Space( TamSX3("ZB5_DEFIN")[1] )
+    EndIf
 
     oModal:SetEscClose(.T.)
     oModal:SetSize(270, 550) // altura, largura

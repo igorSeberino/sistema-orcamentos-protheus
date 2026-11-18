@@ -158,6 +158,8 @@ User Function ViewDef()
 	// Oculta o histórico na inclusão
 	oView:SetAfterViewActivate( { |oView| U_HideHist( oView ) } )
 
+	oView:AddUserButton( "Atividades Similares", "", { |oView| AtivSimilares( oView ) }, "Consulta histórica pela definição do item", , { MODEL_OPERATION_VIEW, MODEL_OPERATION_UPDATE } )
+
 Return oView
 
 /*/{Protheus.doc} MenuDef
@@ -193,7 +195,7 @@ User Function MenuDef()
 
 	ADD OPTION aRotina Title 'Importar CSV' Action ZORCA06 + ".U_ZORCA06()" OPERATION 3 ACCESS 0
 	ADD OPTION aRotina Title 'Consulta Histórica' Action ZORCA07 + ".U_ZORCA07()" OPERATION 3 ACCESS 0
-
+	
 Return aRotina
 
 /*/{Protheus.doc} VldData
@@ -567,3 +569,12 @@ User Function VldAprovador()
     EndIf
 
 Return lRet
+
+Static Function AtivSimilares( oView )
+
+	Local oModel := oView:GetModel():GetModel( "ZB5DETAIL" )
+	Local cDef := oModel:GetValue( "ZB5_DEFIN" )
+
+	custom.orc.consulta.historico.U_ZORCA07( cDef )
+
+Return 
