@@ -452,10 +452,10 @@ São sete etapas. Cada uma acrescenta um padrão MVC sobre a anterior, e só é 
 
 **Critérios de aceite:**
 
-* ☐ Os filtros funcionam isolados e combinados, e a consulta considera só a filial corrente e registros não excluídos.  
-* ☐ O resumo bate com um cálculo manual feito em planilha sobre os mesmos dados.  
-* ☐ O botão Atividades Similares abre a consulta filtrada pela Definição do item posicionado.  
-* ☐ Abrir Orçamento mostra o orçamento em modo visualização.  
+* ◼ Os filtros funcionam isolados e combinados, e a consulta considera só a filial corrente e registros não excluídos.  
+* ◼ O resumo bate com um cálculo manual feito em planilha sobre os mesmos dados.  
+* ◼ O botão Atividades Similares abre a consulta filtrada pela Definição do item posicionado.  
+* ◼ Abrir Orçamento mostra o orçamento em modo visualização.  
 * ☐ O relatório imprime cabeçalho, itens, atividades e totais em horas e hh:mm.
 
 ## **7\. Orientações técnicas e armadilhas**

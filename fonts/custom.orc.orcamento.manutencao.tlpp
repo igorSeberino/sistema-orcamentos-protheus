@@ -11,6 +11,7 @@ using namespace custom.orc.utils
 #define ZORCA05 "custom.orc.orcamento.aprovacao"
 #define ZORCA06 "custom.orc.orcamento.importacao"
 #define ZORCA07 "custom.orc.consulta.historico"
+#define ZORCR01 "custom.orc.relatorio.orcamento"
 
 #define STATUS_RASCUNHO  "1"
 #define STATUS_ENVIADO   "2"
@@ -179,22 +180,20 @@ User Function MenuDef()
     //Define a chamada das actions do menu 
     Local cActionString := FormatStr("VIEWDEF.%c.ZORCA04", NAMESPACE)
 
-    ADD OPTION aRotina Title 'Visualizar' Action cActionString OPERATION 2 ACCESS 0
-	ADD OPTION aRotina Title 'Incluir' Action cActionString OPERATION 3 ACCESS 0
-	ADD OPTION aRotina Title 'Alterar' Action cActionString OPERATION 4 ACCESS 0
-	ADD OPTION aRotina Title 'Excluir' Action cActionString OPERATION 5 ACCESS 0
-	ADD OPTION aRotina Title 'Imprimir' Action cActionString OPERATION 8 ACCESS 0
-	ADD OPTION aRotina Title 'Copiar' Action cActionString OPERATION 9 ACCESS 0
-	ADD OPTION aRotina Title 'Enviar Rascunho' Action ZORCA05 + ".U_ZORCA05( 'ENV' )" OPERATION 5 ACCESS 0
-	ADD OPTION aRotina Title 'Novo Rascunho' Action ZORCA05 + ".U_ZORCA05( 'NOV' )" OPERATION 5 ACCESS 0
-
+    ADD OPTION aRotina Title 'Visualizar'         Action cActionString                   OPERATION 2 ACCESS 0
+	ADD OPTION aRotina Title 'Incluir'            Action cActionString                   OPERATION 3 ACCESS 0
+	ADD OPTION aRotina Title 'Alterar'            Action cActionString                   OPERATION 4 ACCESS 0
+	ADD OPTION aRotina Title 'Excluir'            Action cActionString                   OPERATION 5 ACCESS 0
+	ADD OPTION aRotina Title 'Copiar'             Action cActionString                   OPERATION 9 ACCESS 0
+	ADD OPTION aRotina Title 'Imprimir'           Action ZORCR01 + ".U_ZORCR01()"        OPERATION 3 ACCESS 0
+	ADD OPTION aRotina Title 'Enviar Rascunho'    Action ZORCA05 + ".U_ZORCA05( 'ENV' )" OPERATION 5 ACCESS 0
+	ADD OPTION aRotina Title 'Novo Rascunho'      Action ZORCA05 + ".U_ZORCA05( 'NOV' )" OPERATION 5 ACCESS 0
+	ADD OPTION aRotina Title 'Importar CSV'       Action ZORCA06 + ".U_ZORCA06()"        OPERATION 3 ACCESS 0
+	ADD OPTION aRotina Title 'Consulta Histórica' Action ZORCA07 + ".U_ZORCA07()"        OPERATION 3 ACCESS 0
 	If U_VldAprovador()
-		ADD OPTION aRotina Title 'Aprovação' Action ZORCA05 + ".U_ZORCA05( 'APR' )" OPERATION 5 ACCESS 0
-		ADD OPTION aRotina Title 'Estornar' Action ZORCA05 + ".U_ZORCA05( 'EST' )" OPERATION 5 ACCESS 0
+		ADD OPTION aRotina Title 'Aprovação'      Action ZORCA05 + ".U_ZORCA05( 'APR' )" OPERATION 5 ACCESS 0
+		ADD OPTION aRotina Title 'Estornar'       Action ZORCA05 + ".U_ZORCA05( 'EST' )" OPERATION 5 ACCESS 0
 	EndIf
-
-	ADD OPTION aRotina Title 'Importar CSV' Action ZORCA06 + ".U_ZORCA06()" OPERATION 3 ACCESS 0
-	ADD OPTION aRotina Title 'Consulta Histórica' Action ZORCA07 + ".U_ZORCA07()" OPERATION 3 ACCESS 0
 	
 Return aRotina
 
