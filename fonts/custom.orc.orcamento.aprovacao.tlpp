@@ -111,7 +111,8 @@ Return nRet
 
 User Function Envio( oModal, oPanel )
 
-    Local lRet
+    Local lRet as logical
+    Local cError as character
 
 	// Carrega o modelo de dados
 	Local oModel := FWLoadModel(NZORCA04 + ".U_ZORCA04")
@@ -142,17 +143,21 @@ User Function Envio( oModal, oPanel )
 
                 If !U_GravaHist( ACAO_ENVIADO )
                     DisarmTransaction()
-                    Help( , , "ZORCA05", , "Ocorreu um erro ao gravar o histórico", 1, 0 )
+                    cErro := "Ocorreu um erro ao gravar o histórico"
                 EndIf
 
             Else
                 DisarmTransaction()
-                Help( , , "ZORCA05", , "Ocorreu um erro inesperado", 1, 0 )
-
+                cErro := "Ocorreu um erro inesperado"
             EndIf
 
 
         End Transaction
+
+    If cError != ""
+        Help( , , "ZORCA05", , cErro, 1, 0 )
+        lRet := .F.
+    EndIf
 
     EndIf
 
@@ -165,9 +170,10 @@ Return .T.
 
 User Function Revisar( oModal, oPanel )
 
-    Local nOpcao 
-    Local aArea
-    Local cObs
+    Local nOpcao
+    Local aArea  as array
+    Local cObs   as character
+    Local cError as character
 
     If ZB4->ZB4_STATUS != STATUS_ENVIADO
         Help( , , "ZORCA05", , "O orçamento não foi enviado para revisão.", 1, 0 )
@@ -194,22 +200,22 @@ User Function Revisar( oModal, oPanel )
                         Case nOpcao == 1
                             ZB4->ZB4_STATUS := STATUS_APROVADO
                             If !U_GravaHist( ACAO_APROVADO, cObs )
-                                Help( , , "ZORCA05", , "Ocorreu um erro ao gravar o histórico.", 1, 0 )
+                                cError := "Ocorreu um erro ao gravar o histórico"
                                 DisarmTransaction()
                             EndIf
                         Case nOpcao == 2
                             ZB4->ZB4_STATUS := STATUS_REPROVADO
                             If !U_GravaHist( ACAO_REPROVADO, cObs )
-                                Help( , , "ZORCA05", , "Ocorreu um erro ao gravar o histórico.", 1, 0 )
+                                cError := "Ocorreu um erro ao gravar o histórico"
                                 DisarmTransaction()
                             EndIf
                         Otherwise
-                            Help( , , "ZORCA05", , "Ocorreu um erro inesperado", 1, 0 )
+                            cError := "Ocorreu um erro inesperado"
+                            DisarmTransaction()
                     EndCase   
 
                 Else
-
-                    Help( , , "ZORCA05", , "O status do orçamento foi alterado por outro usuário.", 1, 0 )
+                    cError := "O status do orçamento foi alterado por outro usuário."
                     DisarmTransaction()
 
                 EndIf
@@ -219,6 +225,10 @@ User Function Revisar( oModal, oPanel )
             EndIf
 
         End Transaction
+        
+        If cError != ""
+            Help( , , "ZORCA05", , cError, 1, 0 )
+        EndIf
 
         RestArea( aArea )
 
@@ -238,9 +248,11 @@ User Function NovoRascunho( oModal, oPanel )
 
     If ZB4->ZB4_STATUS != STATUS_APROVADO .And. ZB4->ZB4_STATUS != STATUS_REPROVADO
         Help( , , "ZORCA05", , "O orçamento precisa ter sido revisado para abrir um novo rascunho.", 1, 0 )
+        (cAliasQry)->(dbCloseArea())
     	Return .F.
     ElseIf !(cAliasQry)->(EoF())
         Help( , , "ZORCA05", , "O orçamento já tem um novo rascunho criado.", 1, 0 )
+        (cAliasQry)->(dbCloseArea())
     	Return .F.
     EndIf
 
@@ -276,8 +288,9 @@ Return .T.
 User Function Estornar( oModal, oPanel )
 
     Local nOpcao
-    Local aArea
-    Local cObs
+    Local aArea  as array
+    Local cObs   as character
+    Local cError as character
 
     If ZB4->ZB4_STATUS != STATUS_APROVADO
         Help( , , "ZORCA05", , "O orçamento só pode ser estornado após aprovação.", 1, 0 )
@@ -306,13 +319,12 @@ User Function Estornar( oModal, oPanel )
                     ZB4->ZB4_HRAPR  := ""
 
                     If !U_GravaHist( ACAO_ESTORNADO, cObs )
-                        Help( , , "ZORCA05", , "Ocorreu um erro ao gravar o histórico.", 1, 0 )
+                        cError := "Ocorreu um erro ao gravar o histórico"
                         DisarmTransaction()
                     EndIf   
 
                 Else
-
-                    Help( , , "ZORCA05", , "O status do orçamento foi alterado por outro usuário.", 1, 0 )
+                    cError := "O status do orçamento foi alterado por outro usuário."
                     DisarmTransaction()
 
                 EndIf
@@ -322,6 +334,10 @@ User Function Estornar( oModal, oPanel )
             EndIf
 
         End Transaction
+
+        If cError != ""
+            Help( , , "ZORCA05", , cError, 1, 0 )
+        EndIf
 
         RestArea( aArea )
 
@@ -427,6 +443,8 @@ User Function VldAprovador()
         Help( , , "ZORCA05", , "Usuário não é aprovador ativo.", 1, 0 )
         lRet := .F.
     EndIf
+
+    (cAliasQry)->(dbCloseArea())
 
 Return lRet
 
