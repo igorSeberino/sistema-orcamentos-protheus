@@ -1,10 +1,9 @@
 #include "totvs.ch"
 #include "fwmvcdef.ch"
+#include "custom.orc.th"
 
 namespace custom.orc.consulta.historico
 using namespace custom.orc.utils
-
-#define ZORCA04 "custom.orc.orcamento.manutencao"
 
 /*/{Protheus.doc} ZORCA07
 	Consulta histórica com filtros
@@ -395,7 +394,7 @@ Static Function Visualizar( cOrcamento )
     ZB4->(DbSetOrder(1))
     ZB4->(DbSeek(cChave))
 
-    FWExecView("Visualizar", FormatStr("VIEWDEF.%c.ZORCA04", ZORCA04), MODEL_OPERATION_VIEW)
+    FWExecView("Visualizar", FormatStr("VIEWDEF.%c.ZORCA04", NZORCA04), MODEL_OPERATION_VIEW)
 
     RestArea(aArea)
 

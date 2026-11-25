@@ -1,0 +1,31 @@
+#ifndef CUSTOM_ORC_TH
+#define CUSTOM_ORC_TH
+
+// Fontes
+#define NZORCA01 "custom.orc.cadastro.areas"
+#define NZORCA02 "custom.orc.cadastro.definicoes"
+#define NZORCA03 "custom.orc.cadastro.aprovadores"
+#define NZORCA04 "custom.orc.orcamento.manutencao"
+#define NZORCA05 "custom.orc.orcamento.aprovacao"
+#define NZORCA06 "custom.orc.orcamento.importacao"
+#define NZORCA07 "custom.orc.consulta.historico"
+#define NZORCR01 "custom.orc.relatorio.orcamento"
+#define NUTILS   "custom.orc.utils"
+
+// Status do orçamento (ZB4_STATUS)
+#define STATUS_RASCUNHO  "1"
+#define STATUS_ENVIADO   "2"
+#define STATUS_APROVADO  "3"
+#define STATUS_REPROVADO "4"
+
+// Ações do histórico
+#define ACAO_ENVIADO     "1"
+#define ACAO_APROVADO    "2"
+#define ACAO_REPROVADO   "3"
+#define ACAO_ESTORNADO   "4"
+
+// Situação dos cadastros (ZB1/ZB2/ZB3 _ATIVO)
+#define ATIVO_SIM "1"
+#define ATIVO_NAO "2"
+
+#endif

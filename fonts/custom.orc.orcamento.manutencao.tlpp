@@ -1,27 +1,10 @@
 #include "totvs.ch"
 #include "tlpp-core.th"
 #include "fwmvcdef.ch"
+#include "custom.orc.th"
 
 namespace custom.orc.orcamento.manutencao
-
 using namespace custom.orc.utils
-
-#define NAMESPACE "custom.orc.orcamento.manutencao"
-#define UTILS "custom.orc.utils"
-#define ZORCA05 "custom.orc.orcamento.aprovacao"
-#define ZORCA06 "custom.orc.orcamento.importacao"
-#define ZORCA07 "custom.orc.consulta.historico"
-#define ZORCR01 "custom.orc.relatorio.orcamento"
-
-#define STATUS_RASCUNHO  "1"
-#define STATUS_ENVIADO   "2"
-#define STATUS_APROVADO  "3"
-#define STATUS_REPROVADO "4"
-
-#define ACAO_ENVIADO     "1"
-#define ACAO_APROVADO    "2"
-#define ACAO_REPROVADO   "3"
-#define ACAO_ESTORNADO   "4"
 
 /*/{Protheus.doc} ZORCA04
 	Orçamentos (browse e manutenção) (ZB4) - tela browse
@@ -40,10 +23,10 @@ User Function ZORCA04()
     oBrowse:SetDescription("Orçamentos (browse e manutenção)")
 
     // oBrowse:AddLegend(/* Campo = Valor */,/* Cor */,/* Legenda */)
-	oBrowse:AddLegend("ZB4_STATUS = '1'", "WHITE", "Rascunho")
-	oBrowse:AddLegend("ZB4_STATUS = '2'", "YELLOW", "Enviado")
-	oBrowse:AddLegend("ZB4_STATUS = '3'", "GREEN", "Aprovado")
-	oBrowse:AddLegend("ZB4_STATUS = '4'", "RED", "Reprovado")
+	oBrowse:AddLegend("ZB4_STATUS == '" + STATUS_RASCUNHO + "'", "WHITE", "Rascunho")
+	oBrowse:AddLegend("ZB4_STATUS == '" + STATUS_ENVIADO + "'", "YELLOW", "Enviado")
+	oBrowse:AddLegend("ZB4_STATUS == '" + STATUS_APROVADO + "'", "GREEN", "Aprovado")
+	oBrowse:AddLegend("ZB4_STATUS == '" + STATUS_REPROVADO + "'", "RED", "Reprovado")
 
 
     oBrowse:Activate()
@@ -70,7 +53,7 @@ User Function ModelDef()
 	Local oStruZB7 := FWFormStruct(1, "ZB7")
 
 	// Seta os triggers do model
-	U_TriggerSet( oStruZB4, oStruZB5, oStruZB6 )
+	TriggerSet( oStruZB4, oStruZB5, oStruZB6 )
 
     oModel:AddFields("ZB4MASTER", /*cOwner*/, oStruZB4)
 	oModel:AddGrid("ZB5DETAIL", "ZB4MASTER", oStruZB5)
@@ -79,7 +62,7 @@ User Function ModelDef()
     oModel:SetDescription('Modelo de Orçamentos')
 
 	// Seta os relacionamentos do model
-	U_RelationSet( @oModel )
+	RelationSet( @oModel )
 
     oModel:GetModel('ZB4MASTER'):SetDescription('Modelo de Orçamentos')
 	oModel:GetModel("ZB5DETAIL"):SetUniqueLine( { "ZB5_ITEM" } )
@@ -120,7 +103,7 @@ Return oModel
 /*/
 User Function ViewDef()
 
-    Local oModel := FWLoadModel(NAMESPACE + ".ZORCA04")
+    Local oModel := FWLoadModel(NZORCA04 + ".ZORCA04")
     Local oStruZB4 := FWFormStruct(2, "ZB4")
 	Local oStruZB5 := FWFormStruct(2, "ZB5")
 	Local oStruZB6 := FWFormStruct(2, "ZB6")
@@ -128,7 +111,7 @@ User Function ViewDef()
     Local oView := FWFormView():New()
 
 	// Esconde campos do usuário (controle interno)
-	U_RemoveFields( oStruZB4, oStruZB5, oStruZB6, oStruZB7 )
+	RemoveFields( oStruZB4, oStruZB5, oStruZB6, oStruZB7 )
 
     oView:SetModel( oModel )
     oView:AddField( 'VIEW_ZB4', oStruZB4, 'ZB4MASTER' )
@@ -178,21 +161,21 @@ User Function MenuDef()
 
     Local aRotina := {}
     //Define a chamada das actions do menu 
-    Local cActionString := FormatStr("VIEWDEF.%c.ZORCA04", NAMESPACE)
+    Local cActionString := FormatStr("VIEWDEF.%c.ZORCA04", NZORCA04)
 
     ADD OPTION aRotina Title 'Visualizar'         Action cActionString                   OPERATION 2 ACCESS 0
 	ADD OPTION aRotina Title 'Incluir'            Action cActionString                   OPERATION 3 ACCESS 0
 	ADD OPTION aRotina Title 'Alterar'            Action cActionString                   OPERATION 4 ACCESS 0
 	ADD OPTION aRotina Title 'Excluir'            Action cActionString                   OPERATION 5 ACCESS 0
 	ADD OPTION aRotina Title 'Copiar'             Action cActionString                   OPERATION 9 ACCESS 0
-	ADD OPTION aRotina Title 'Imprimir'           Action ZORCR01 + ".U_ZORCR01()"        OPERATION 3 ACCESS 0
-	ADD OPTION aRotina Title 'Enviar Rascunho'    Action ZORCA05 + ".U_ZORCA05( 'ENV' )" OPERATION 5 ACCESS 0
-	ADD OPTION aRotina Title 'Novo Rascunho'      Action ZORCA05 + ".U_ZORCA05( 'NOV' )" OPERATION 5 ACCESS 0
-	ADD OPTION aRotina Title 'Importar CSV'       Action ZORCA06 + ".U_ZORCA06()"        OPERATION 3 ACCESS 0
-	ADD OPTION aRotina Title 'Consulta Histórica' Action ZORCA07 + ".U_ZORCA07()"        OPERATION 3 ACCESS 0
+	ADD OPTION aRotina Title 'Imprimir'           Action NZORCR01 + ".U_ZORCR01()"        OPERATION 3 ACCESS 0
+	ADD OPTION aRotina Title 'Enviar Rascunho'    Action NZORCA05 + ".U_ZORCA05( 'ENV' )" OPERATION 5 ACCESS 0
+	ADD OPTION aRotina Title 'Novo Rascunho'      Action NZORCA05 + ".U_ZORCA05( 'NOV' )" OPERATION 5 ACCESS 0
+	ADD OPTION aRotina Title 'Importar CSV'       Action NZORCA06 + ".U_ZORCA06()"        OPERATION 3 ACCESS 0
+	ADD OPTION aRotina Title 'Consulta Histórica' Action NZORCA07 + ".U_ZORCA07()"        OPERATION 3 ACCESS 0
 	If U_VldAprovador()
-		ADD OPTION aRotina Title 'Aprovação'      Action ZORCA05 + ".U_ZORCA05( 'APR' )" OPERATION 5 ACCESS 0
-		ADD OPTION aRotina Title 'Estornar'       Action ZORCA05 + ".U_ZORCA05( 'EST' )" OPERATION 5 ACCESS 0
+		ADD OPTION aRotina Title 'Aprovação'      Action NZORCA05 + ".U_ZORCA05( 'APR' )" OPERATION 5 ACCESS 0
+		ADD OPTION aRotina Title 'Estornar'       Action NZORCA05 + ".U_ZORCA05( 'EST' )" OPERATION 5 ACCESS 0
 	EndIf
 	
 Return aRotina
@@ -233,7 +216,7 @@ Return lRet
 
 	@return Nil
 /*/
-User Function TriggerSet( oStruZB4 as object, oStruZB5 as object, oStruZB6 as object )
+Static Function TriggerSet( oStruZB4 as object, oStruZB5 as object, oStruZB6 as object )
 
 	Local aTriggersZB4 := {}
 	Local aTriggersZB5 := {}
@@ -242,24 +225,24 @@ User Function TriggerSet( oStruZB4 as object, oStruZB5 as object, oStruZB6 as ob
 
 	// Monta triggers de ZB4
 	aAdd( aTriggersZB4, FwStruTrigger( "ZB4_LOJA", "ZB4_NOMCLI", 'Posicione("SA1", 1, xFilial("SA1") + M->ZB4_CLIENT + M->ZB4_LOJA, "A1_NOME")', .F., "", 0,,, "01" ) )
-	aAdd( aTriggersZB4, FwStruTrigger( "ZB4_HRDIA", "ZB4_HRDNUM", UTILS + '.U_HoursToNum(M->ZB4_HRDIA)', .F., "", 0,,, "01" ) )
-	aAdd( aTriggersZB4, FwStruTrigger( "ZB4_TOTHR", "ZB4_TTHRNM", UTILS + '.U_HoursToNum(M->ZB4_TOTHR)', .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB4, FwStruTrigger( "ZB4_HRDIA", "ZB4_HRDNUM", NUTILS + '.U_HoursToNum(M->ZB4_HRDIA)', .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB4, FwStruTrigger( "ZB4_TOTHR", "ZB4_TTHRNM", NUTILS + '.U_HoursToNum(M->ZB4_TOTHR)', .F., "", 0,,, "01" ) )
 
 	// Monta triggers de ZB5
 	aAdd( aTriggersZB5, FwStruTrigger( "ZB5_DEFIN", "ZB5_DESDEF", 'Posicione("ZB2", 1, xFilial("ZB2") + M->ZB5_DEFIN, "ZB2_DESC")', .F., "", 0,,, "01" ) )
 	aAdd( aTriggersZB5, FwStruTrigger( "ZB5_AREA", "ZB5_DESARE", 'Posicione("ZB1", 1, xFilial("ZB1") + M->ZB5_AREA, "ZB1_DESC")', .F., "", 0,,, "01" ) )
 
 	// Triggers de ZB6 (Hora char p/ hora num)
-	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HDOC", "ZB6_HDOCNM", UTILS + ".U_HoursToNum(M->ZB6_HDOC)", .F., "", 0,,, "01" ) )
-	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HDEV", "ZB6_HDEVNM", UTILS + ".U_HoursToNum(M->ZB6_HDEV)", .F., "", 0,,, "01" ) )
-	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HANA", "ZB6_HANANM", UTILS + ".U_HoursToNum(M->ZB6_HANA)", .F., "", 0,,, "01" ) )
-	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HVAL", "ZB6_HVALNM", UTILS + ".U_HoursToNum(M->ZB6_HVAL)", .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HDOC", "ZB6_HDOCNM", NUTILS + ".U_HoursToNum(M->ZB6_HDOC)", .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HDEV", "ZB6_HDEVNM", NUTILS + ".U_HoursToNum(M->ZB6_HDEV)", .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HANA", "ZB6_HANANM", NUTILS + ".U_HoursToNum(M->ZB6_HANA)", .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HVAL", "ZB6_HVALNM", NUTILS + ".U_HoursToNum(M->ZB6_HVAL)", .F., "", 0,,, "01" ) )
 
 	// ZB6 Cálculo horas totais
-	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HDOCNM", "ZB6_TTHRNM", NAMESPACE + ".U_ZB6CalcHrs()", .F., "", 0,,, "01" ) )
-	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HDEVNM", "ZB6_TTHRNM", NAMESPACE + ".U_ZB6CalcHrs()", .F., "", 0,,, "01" ) )
-	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HANANM", "ZB6_TTHRNM", NAMESPACE + ".U_ZB6CalcHrs()", .F., "", 0,,, "01" ) )
-	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HVALNM", "ZB6_TTHRNM", NAMESPACE + ".U_ZB6CalcHrs()", .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HDOCNM", "ZB6_TTHRNM", NZORCA04 + ".U_ZB6CalcHrs()", .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HDEVNM", "ZB6_TTHRNM", NZORCA04 + ".U_ZB6CalcHrs()", .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HANANM", "ZB6_TTHRNM", NZORCA04 + ".U_ZB6CalcHrs()", .F., "", 0,,, "01" ) )
+	aAdd( aTriggersZB6, FWStruTrigger( "ZB6_HVALNM", "ZB6_TTHRNM", NZORCA04 + ".U_ZB6CalcHrs()", .F., "", 0,,, "01" ) )
 
 
 	// Adiciona triggers à ZB4
@@ -421,7 +404,7 @@ Return .T.
 
 	@since 03/11/2026
 /*/
-User Function RemoveFields( oStruZB4, oStruZB5, oStruZB6, oStruZB7 )
+Static Function RemoveFields( oStruZB4, oStruZB5, oStruZB6, oStruZB7 )
 
 	// ZB4
 	oStruZB4:RemoveField("ZB4_HRDNUM")
@@ -453,7 +436,7 @@ User Function VldActivate( oModel as object )
 	Local lRet := .T.
 	local nOperation := oModel:GetOperation()
 
-	If ( nOperation == MODEL_OPERATION_UPDATE .Or. nOperation == MODEL_OPERATION_DELETE ) .And. ZB4->ZB4_STATUS != "1"
+	If ( nOperation == MODEL_OPERATION_UPDATE .Or. nOperation == MODEL_OPERATION_DELETE ) .And. ZB4->ZB4_STATUS != STATUS_RASCUNHO
 	
 		oModel:SetErrorMessage( "ZB4MASTER", "ZB4_STATUS", "ZB4MASTER", "ZB4_STATUS", "ERRO", ;
         "Orçamento enviado não pode ser alterado nem excluído.", ;
@@ -464,7 +447,7 @@ User Function VldActivate( oModel as object )
 
 Return lRet
 
-User Function RelationSet( oModel )
+Static Function RelationSet( oModel )
 
 	// Define relação entre ZB4 e ZB5
 	oModel:SetRelation("ZB5DETAIL", { ;

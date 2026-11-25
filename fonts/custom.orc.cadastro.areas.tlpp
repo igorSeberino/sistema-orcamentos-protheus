@@ -1,10 +1,9 @@
 #include "totvs.ch"
 #include "fwmvcdef.ch"
+#include "custom.orc.th"
 
 namespace custom.orc.cadastro.areas
 using namespace custom.orc.utils
-
-#define NAMESPACE "custom.orc.cadastro.areas"
 
 /*/{Protheus.doc} ZORCA01
 	Cadastro de Produtos (ZB1) - tela browse
@@ -23,8 +22,8 @@ User Function ZORCA01()
     oBrowse:SetDescription("Cadastro de Áreas")
 
     // oBrowse:AddLegend(/* Campo = Valor */,/* Cor */,/* Legenda */)
-    oBrowse:AddLegend("ZB1_ATIVO == '1'", "GREEN", "Ativa")
-    oBrowse:AddLegend("ZB1_ATIVO == '2'", "RED", "Inativa")
+    oBrowse:AddLegend("ZB1_ATIVO == '" + ATIVO_SIM + "'", "GREEN", "Ativa")
+    oBrowse:AddLegend("ZB1_ATIVO == '" + ATIVO_NAO + "'", "RED", "Inativa")
 
     oBrowse:Activate()
 
@@ -69,7 +68,7 @@ Return oModel
 /*/
 User Function ViewDef()
 
-    Local oModel := FWLoadModel(NAMESPACE + ".ZORCA01")
+    Local oModel := FWLoadModel(NZORCA01 + ".ZORCA01")
     Local oStruZB1 := FWFormStruct(2, "ZB1")
     Local oView := FWFormView():New()
     
@@ -96,12 +95,12 @@ User Function MenuDef()
 
     Local aRotina := {}
     //Define a chamada das actions do menu 
-    Local cActionString := FormatStr("VIEWDEF.%c.ZORCA01", NAMESPACE)
+    Local cActionString := FormatStr("VIEWDEF.%c.ZORCA01", NZORCA01)
 
     ADD OPTION aRotina Title 'Visualizar' Action cActionString OPERATION 2 ACCESS 0
 	ADD OPTION aRotina Title 'Incluir' Action cActionString OPERATION 3 ACCESS 0
 	ADD OPTION aRotina Title 'Alterar' Action cActionString OPERATION 4 ACCESS 0
-	ADD OPTION aRotina Title 'Excluir' Action NAMESPACE + ".U_ZORCA01Exc()" OPERATION 5 ACCESS 0
+	ADD OPTION aRotina Title 'Excluir' Action NZORCA01 + ".U_ZORCA01Exc()" OPERATION 5 ACCESS 0
 	ADD OPTION aRotina Title 'Imprimir' Action cActionString OPERATION 8 ACCESS 0
 	ADD OPTION aRotina Title 'Copiar' Action cActionString OPERATION 9 ACCESS 0
 
@@ -121,7 +120,7 @@ Return aRotina
 /*/
 User Function ZORCA01Exc()
 
-    Local oModel := FWLoadModel(NAMESPACE + ".U_ZORCA01")
+    Local oModel := FWLoadModel(NZORCA01 + ".U_ZORCA01")
 
     // Busca registros da ZB5 associados ao registro da ZB1
     Local cQuery := U_QuerySet( "ZB5", {"ZB5_COD"}, { {"ZB5.ZB5_AREA = ", ZB1->ZB1_COD} })
@@ -131,13 +130,13 @@ User Function ZORCA01Exc()
     If !(cAliasQry)->(EoF())
 
         // Se estiver ativo
-        If ZB1->ZB1_ATIVO == "1"
+        If ZB1->ZB1_ATIVO == ATIVO_SIM
 
             // Pergunta se deseja inativar
             If MsgYesNo("Exclusão indisponível, área já está sendo usada em orçamento. Deseja inativar?", "Área em uso")
                 oModel:SetOperation(MODEL_OPERATION_UPDATE)
                 oModel:Activate()
-                oModel:SetValue("ZB1MASTER", "ZB1_ATIVO", "2")
+                oModel:SetValue("ZB1MASTER", "ZB1_ATIVO", ATIVO_NAO)
                 oModel:VldData()
                 oModel:CommitData()
                 oModel:DeActivate()
@@ -147,7 +146,7 @@ User Function ZORCA01Exc()
             Aviso("ATENÇÃO", "A área já esta inativa, sua exclusão não pode ser efetuada pois está sendo usada em orçamento", {"Ok"})
         EndIf
     Else
-        FWExecView("Excluir", NAMESPACE + ".U_ZORCA01", MODEL_OPERATION_DELETE)
+        FWExecView("Excluir", NZORCA01 + ".U_ZORCA01", MODEL_OPERATION_DELETE)
     EndIf
 
     (cAliasQry)->(dbCloseArea())

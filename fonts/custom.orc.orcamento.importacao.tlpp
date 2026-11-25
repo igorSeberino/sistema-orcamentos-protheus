@@ -1,10 +1,9 @@
 #include "totvs.ch"
 #include "fwmvcdef.ch"
+#include "custom.orc.th"
 
 namespace custom.orc.orcamento.importacao
 using namespace custom.orc.utils
-
-#define ZORCA04 "custom.orc.orcamento.manutencao"
 
 /*/{Protheus.doc} ZORCA06
 	Importação de orçamento a partir de CSV
@@ -70,7 +69,7 @@ Return
 /*/
 User Function Importar( cPath as character, aRet as array, oFile as object )
 
-    Local oModel  := FWLoadModel(ZORCA04 + ".U_ZORCA04")
+    Local oModel  := FWLoadModel(NZORCA04 + ".U_ZORCA04")
     Local oZB5    as object
     Local oZB6    as object
     Local cLinha  as character

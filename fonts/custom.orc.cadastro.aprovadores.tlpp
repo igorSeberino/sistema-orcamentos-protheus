@@ -1,10 +1,9 @@
 #include "totvs.ch"
 #include "fwmvcdef.ch"
+#include "custom.orc.th"
 
 namespace custom.orc.cadastro.aprovadores
 using namespace custom.orc.utils
-
-#define NAMESPACE "custom.orc.cadastro.aprovadores"
 
 /*/{Protheus.doc} ZORCA03
 	Cadastro de Aprovadores (ZB3) - tela browse
@@ -23,8 +22,8 @@ User Function ZORCA03()
     oBrowse:SetDescription("Cadastro de Aprovadores")
 
     // oBrowse:AddLegend(/* Campo = Valor */,/* Cor */,/* Legenda */)
-    oBrowse:AddLegend("ZB3_ATIVO == '1'", "GREEN", "Ativa")
-    oBrowse:AddLegend("ZB3_ATIVO == '2'", "RED", "Inativa")
+    oBrowse:AddLegend("ZB3_ATIVO == '" + ATIVO_SIM + "'", "GREEN", "Ativa")
+    oBrowse:AddLegend("ZB3_ATIVO == '" + ATIVO_NAO + "'", "RED", "Inativa")
 
     oBrowse:Activate()
 
@@ -72,7 +71,7 @@ Return oModel
 /*/
 User Function ViewDef()
 
-    Local oModel := FWLoadModel(NAMESPACE + ".ZORCA03")
+    Local oModel := FWLoadModel(NZORCA03 + ".ZORCA03")
     Local oStruZB3 := FWFormStruct(2, "ZB3")
     Local oView := FWFormView():New()
     
@@ -99,12 +98,12 @@ User Function MenuDef()
 
     Local aRotina := {}
     //Define a chamada das actions do menu 
-    Local cActionString := FormatStr("VIEWDEF.%c.ZORCA03", NAMESPACE)
+    Local cActionString := FormatStr("VIEWDEF.%c.ZORCA03", NZORCA03)
 
     ADD OPTION aRotina Title 'Visualizar' Action cActionString OPERATION 2 ACCESS 0
 	ADD OPTION aRotina Title 'Incluir' Action cActionString OPERATION 3 ACCESS 0
 	ADD OPTION aRotina Title 'Alterar' Action cActionString OPERATION 4 ACCESS 0
-	ADD OPTION aRotina Title 'Excluir' Action NAMESPACE + ".U_ZORCA03Exc()" OPERATION 5 ACCESS 0
+	ADD OPTION aRotina Title 'Excluir' Action NZORCA03 + ".U_ZORCA03Exc()" OPERATION 5 ACCESS 0
 	ADD OPTION aRotina Title 'Imprimir' Action cActionString OPERATION 8 ACCESS 0
 	ADD OPTION aRotina Title 'Copiar' Action cActionString OPERATION 9 ACCESS 0
 
@@ -112,7 +111,7 @@ Return aRotina
 
 User Function ZORCA03Exc()
 
-    Local oModel := FWLoadModel(NAMESPACE + ".U_ZORCA03")
+    Local oModel := FWLoadModel(NZORCA03 + ".U_ZORCA03")
 
     // Busca registros da ZB5 associados ao registro da ZB1
     Local cQuery := U_QuerySet( "ZB4", {"ZB4_COD"}, { {"ZB4.ZB4_USRINC = ", ZB3->ZB3_USER} })
@@ -127,13 +126,13 @@ User Function ZORCA03Exc()
     If !(cAliasQry)->(EoF())
 
         // Se estiver ativo
-        If ZB3->ZB3_ATIVO == "1"
+        If ZB3->ZB3_ATIVO == ATIVO_SIM
 
             // Pergunta se deseja inativar
             If MsgYesNo("Exclusão indisponível, aprovador tem ações em orçamentos. Deseja inativar?", "Exclusão Indisponível")
                 oModel:SetOperation(MODEL_OPERATION_UPDATE)
                 oModel:Activate()
-                oModel:SetValue("ZB3MASTER", "ZB3_ATIVO", "2")
+                oModel:SetValue("ZB3MASTER", "ZB3_ATIVO", ATIVO_NAO)
                 oModel:VldData()
                 oModel:CommitData()
                 oModel:DeActivate()
@@ -143,7 +142,7 @@ User Function ZORCA03Exc()
             Aviso("ATENÇÃO", "O aprovador já está inativo, sua exclusão não pode ser efetuada pois ele tem ações em orçamentos", {"Ok"})
         EndIf
     Else
-        FWExecView("Excluir", NAMESPACE + ".U_ZORCA03", MODEL_OPERATION_DELETE)
+        FWExecView("Excluir", NZORCA03 + ".U_ZORCA03", MODEL_OPERATION_DELETE)
     EndIf
 
     (cAliasQry)->(dbCloseArea())

@@ -1,21 +1,9 @@
 #include "totvs.ch"
 #include "fwmvcdef.ch"
+#include "custom.orc.th"
 
 namespace custom.orc.orcamento.aprovacao
 using namespace custom.orc.utils
-
-#define NAMESPACE "custom.orc.orcamento.aprovacao"
-#define ZORCA04   "custom.orc.orcamento.manutencao"
-
-#define STATUS_RASCUNHO  "1"
-#define STATUS_ENVIADO   "2"
-#define STATUS_APROVADO  "3"
-#define STATUS_REPROVADO "4"
-
-#define ACAO_ENVIADO     "1"
-#define ACAO_APROVADO    "2"
-#define ACAO_REPROVADO   "3"
-#define ACAO_ESTORNADO   "4"
 
 User Function ZORCA05( cAction )
 
@@ -111,7 +99,7 @@ User Function MontaTela( oModal, oPanel, cAction, cObs )
 
 
     // Botao dentro do painel
-    TButton():New(095, 010, "Visualizar Orçamento", oPanel, {|| FWExecView("Visualizar", FormatStr("VIEWDEF.%c.ZORCA04", ZORCA04), MODEL_OPERATION_VIEW) }, 80, 15, , , , .T.)
+    TButton():New(095, 010, "Visualizar Orçamento", oPanel, {|| FWExecView("Visualizar", FormatStr("VIEWDEF.%c.ZORCA04", NZORCA04), MODEL_OPERATION_VIEW) }, 80, 15, , , , .T.)
 
     // Botões da barra inferior
     oModal:AddOkButton( bCode, "Confirmar" )
@@ -126,10 +114,10 @@ User Function Envio( oModal, oPanel )
     Local lRet
 
 	// Carrega o modelo de dados
-	Local oModel := FWLoadModel(ZORCA04 + ".U_ZORCA04")
+	Local oModel := FWLoadModel(NZORCA04 + ".U_ZORCA04")
 
 	// Verificação extra caso VldActivate() não funcione
-	If ZB4->ZB4_STATUS != "1"
+	If ZB4->ZB4_STATUS != STATUS_RASCUNHO
 		Help( , , "ZORCA05", , "Somente orçamento em rascunho pode ser enviado.", 1, 0 )
     	Return .F.
     EndIf
@@ -150,7 +138,7 @@ User Function Envio( oModal, oPanel )
 
         Begin Transaction
 
-            If oModel:SetValue("ZB4MASTER", "ZB4_STATUS", "2") .And. oModel:VldData() .And. oModel:CommitData() //VldData() garante que o modelo passe pelas validações de negócio
+            If oModel:SetValue("ZB4MASTER", "ZB4_STATUS", STATUS_ENVIADO) .And. oModel:VldData() .And. oModel:CommitData() //VldData() garante que o modelo passe pelas validações de negócio
 
                 If !U_GravaHist( ACAO_ENVIADO )
                     DisarmTransaction()
@@ -241,7 +229,7 @@ Return .T.
 
 User Function NovoRascunho( oModal, oPanel )
 
-    Local oModel := FWLoadModel(ZORCA04 + ".U_ZORCA04")
+    Local oModel := FWLoadModel(NZORCA04 + ".U_ZORCA04")
     Local nOpcao
     Local cCod := ZB4->ZB4_COD
     Local cRev := StrZero( (Val(ZB4->ZB4_REV) + 1), 2 )
@@ -272,7 +260,7 @@ User Function NovoRascunho( oModal, oPanel )
             // Limpa o histórico de revisão
             oModel:GetModel("ZB7DETAIL"):ClearData( .F., .T. )
 
-            FWExecView( "Novo Rascunho", "VIEWDEF." + ZORCA04 + ".ZORCA04", MODEL_OPERATION_INSERT, , { || .T. }, , , , , , , oModel )
+            FWExecView( "Novo Rascunho", "VIEWDEF." + NZORCA04 + ".ZORCA04", MODEL_OPERATION_INSERT, , { || .T. }, , , , , , , oModel )
 
             If oModel:IsActive()
                 oModel:DeActivate()
@@ -409,7 +397,7 @@ User Function VldAprovador()
     Local cQuery := U_QuerySet( "ZB3", {"ZB3_ATIVO"}, { {"ZB3_USER = ", cUser} } )
     Local cAliasQry := MPSysOpenQuery(cQuery)
 
-    If !(cAliasQry)->(EoF()) .And. (cAliasQry)->ZB3_ATIVO == '1'
+    If !(cAliasQry)->(EoF()) .And. (cAliasQry)->ZB3_ATIVO == ATIVO_SIM
         If ZB4->ZB4_STATUS == STATUS_ENVIADO .And. cUser == ZB4->ZB4_USRINC
             Help( , , "ZORCA05", , "Aprovador deve ser diferente do criador.", 1, 0 )
             lRet := .F.

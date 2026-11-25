@@ -1,5 +1,6 @@
 #include "totvs.ch"
 #include "fwmvcdef.ch"
+#include "custom.orc.th"
 
 namespace custom.orc.utils
 using namespace custom.orc.orcamento.manutencao
@@ -376,7 +377,7 @@ Return .T.
 /*/
 User Function VldDefin( cDefin )
 
-    Local cQuery := U_QuerySet( "ZB2", {"ZB2_COD"}, {{"ZB2.ZB2_COD = ", cDefin}, {"ZB2.ZB2_ATIVO = ", "1"}} )
+    Local cQuery := U_QuerySet( "ZB2", {"ZB2_COD"}, {{"ZB2.ZB2_COD = ", cDefin}, {"ZB2.ZB2_ATIVO = ", ATIVO_SIM}} )
     Local cAliasQry := MPSysOpenQuery(cQuery)
 
     If (cAliasQry)->(EoF())
@@ -399,7 +400,7 @@ Return .T.
 /*/
 User Function VldArea( cArea )
 
-    Local cQuery := U_QuerySet( "ZB1", {"ZB1_COD"}, {{"ZB1.ZB1_COD = ", cArea}, {"ZB1.ZB1_ATIVO = ", "1"}} )
+    Local cQuery := U_QuerySet( "ZB1", {"ZB1_COD"}, {{"ZB1.ZB1_COD = ", cArea}, {"ZB1.ZB1_ATIVO = ", ATIVO_SIM}} )
     Local cAliasQry := MPSysOpenQuery(cQuery)
 
     If (cAliasQry)->(EoF())

@@ -1,10 +1,9 @@
 #include "totvs.ch"
 #include "tlpp-core.th"
+#include "custom.orc.th"
 
 namespace custom.orc.relatorio.orcamento
 using namespace custom.orc.utils
-
-#define ZORCA04 "custom.orc.orcamento.manutencao"
 
 User Function ZORCR01()
 
