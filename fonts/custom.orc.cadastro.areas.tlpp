@@ -18,12 +18,12 @@ User Function ZORCA01()
 
 	Local oBrowse := FWMBrowse():New()
 
-	oBrowse:SetAlias("ZB1")
-	oBrowse:SetDescription("Cadastro de Áreas")
+	oBrowse:SetAlias( "ZB1" )
+	oBrowse:SetDescription( "Cadastro de Áreas" )
 
 	// oBrowse:AddLegend(/* Campo = Valor */,/* Cor */,/* Legenda */)
-	oBrowse:AddLegend("ZB1_ATIVO == '" + ATIVO_SIM + "'", "GREEN", "Ativa")
-	oBrowse:AddLegend("ZB1_ATIVO == '" + ATIVO_NAO + "'", "RED", "Inativa")
+	oBrowse:AddLegend( "ZB1_ATIVO == '" + ATIVO_SIM + "'", "GREEN", "Ativa" )
+	oBrowse:AddLegend( "ZB1_ATIVO == '" + ATIVO_NAO + "'", "RED", "Inativa" )
 
 	oBrowse:Activate()
 
@@ -42,16 +42,16 @@ Return
 /*/
 User Function ModelDef()
 
-	Local oModel := MPFormModel():New("ZORCA01M")
-	Local oStruZB1 := FWFormStruct(1, "ZB1")
+	Local oModel   := MPFormModel():New("ZORCA01M", /*bPre*/, { |oModel| VldExclusao(oModel) })
+	Local oStruZB1 := FWFormStruct( 1, "ZB1" )
 
 	oModel:AddFields("ZB1MASTER", /*cOwner*/, oStruZB1)
-	oModel:SetDescription('Modelo de Áreas')
+	oModel:SetDescription( 'Modelo de Áreas' )
 
-	oModel:SetPrimaryKey({'ZB1_FILIAL', 'ZB1_COD'})
-	oModel:GetModel('ZB1MASTER'):SetDescription('Modelo de Áreas')
+	oModel:SetPrimaryKey( {'ZB1_FILIAL', 'ZB1_COD'} )
+	oModel:GetModel( 'ZB1MASTER' ):SetDescription( 'Modelo de Áreas' )
 
-	oModel:SetActivate({ |oModel| U_ModelActivate( @oModel, "ZB1" ) })
+	oModel:SetActivate( { |oModel| U_ModelActivate( @oModel, "ZB1" ) } )
 
 Return oModel
 
@@ -68,9 +68,9 @@ Return oModel
 /*/
 User Function ViewDef()
 
-	Local oModel := FWLoadModel(NZORCA01 + ".ZORCA01")
-	Local oStruZB1 := FWFormStruct(2, "ZB1")
-	Local oView := FWFormView():New()
+	Local oModel   := FWLoadModel( NZORCA01 + ".ZORCA01" )
+	Local oStruZB1 := FWFormStruct( 2, "ZB1" )
+	Local oView    := FWFormView():New()
 
 	oView:SetModel( oModel )
 	oView:AddField( 'VIEW_ZB1', oStruZB1, 'ZB1MASTER' )
@@ -94,8 +94,8 @@ Return oView
 User Function MenuDef()
 
 	Local aRotina := {}
-	//Define a chamada das actions do menu
-	Local cActionString := FormatStr("VIEWDEF.%c.ZORCA01", NZORCA01)
+	// Define a chamada das actions do menu
+	Local cActionString := FormatStr( "VIEWDEF.%c.ZORCA01", NZORCA01 )
 
 	ADD OPTION aRotina Title 'Visualizar' Action cActionString OPERATION 2 ACCESS 0
 	ADD OPTION aRotina Title 'Incluir' Action cActionString OPERATION 3 ACCESS 0
@@ -137,8 +137,12 @@ User Function ZORCA01Exc()
 				oModel:SetOperation(MODEL_OPERATION_UPDATE)
 				oModel:Activate()
 				oModel:SetValue("ZB1MASTER", "ZB1_ATIVO", ATIVO_NAO)
-				oModel:VldData()
-				oModel:CommitData()
+				If oModel:VldData()
+					oModel:CommitData()
+				Else
+					Help(, , "ZORCA01EXC", , oModel:GetErrorMessage()[6], 1, 0, ;
+						, , , , , {"Contate o suporte."})
+				EndIf	
 				oModel:DeActivate()
 
 			EndIf
@@ -152,3 +156,36 @@ User Function ZORCA01Exc()
 	(cAliasQry)->(dbCloseArea())
 
 Return
+
+/*/{Protheus.doc} VldExclusao
+	Pos-validacao do modelo: bloqueia exclusao de area usada em item (RN09)
+	@type static function
+	@author igor.seberino
+	@since 25/11/2026
+	@param oModel, object, modelo ZORCA01M
+	@return logical, .T. = pode gravar
+/*/
+Static Function VldExclusao( oModel as object ) as logical
+
+	Local cCod      as character
+	Local cQuery    as character
+	Local cAliasQry as character
+	Local lRet      := .T.
+
+	If oModel:GetOperation() == MODEL_OPERATION_DELETE
+
+		cCod      := oModel:GetValue("ZB1MASTER", "ZB1_COD")
+		cQuery    := U_QuerySet("ZB5", {"ZB5_COD"}, { {"ZB5.ZB5_AREA = ", cCod} })
+		cAliasQry := MPSysOpenQuery(cQuery)
+
+		If !(cAliasQry)->(EoF())
+			lRet := .F.
+			Help(, , "ZORCA01EXC", , "Área já usada em orçamento.", 1, 0, ;
+				, , , , , {"Inative a área em vez de excluir."})
+		EndIf
+
+		(cAliasQry)->(dbCloseArea())
+
+	EndIf
+
+Return lRet

@@ -42,7 +42,7 @@ Return
 /*/
 User Function ModelDef()
 
-	Local oModel := MPFormModel():New("ZORCA02M")
+	Local oModel := MPFormModel():New("ZORCA02M", /*bPre*/, { |oModel| VldExclusao(oModel) })
 	Local oStruZB2 := FWFormStruct(1, "ZB2")
 
 	oModel:AddFields("ZB2MASTER", /*cOwner*/, oStruZB2)
@@ -137,8 +137,12 @@ User Function ZORCA02Exc()
 				oModel:SetOperation(MODEL_OPERATION_UPDATE)
 				oModel:Activate()
 				oModel:SetValue("ZB2MASTER", "ZB2_ATIVO", ATIVO_NAO)
-				oModel:VldData()
-				oModel:CommitData()
+				If oModel:VldData()
+					oModel:CommitData()
+				Else
+					Help(, , "ZORCA02EXC", , oModel:GetErrorMessage()[6], 1, 0, ;
+						, , , , , {"Contate o suporte."})
+				EndIf	
 				oModel:DeActivate()
 
 			EndIf
@@ -152,3 +156,37 @@ User Function ZORCA02Exc()
 	(cAliasQry)->(dbCloseArea())
 
 Return
+
+/*/{Protheus.doc} VldExclusao
+	Pos-validacao do modelo: bloqueia exclusao de area usada em item (RN09)
+	@type static function
+	@author igor.seberino
+	@since 25/11/2026
+	@param oModel, object, modelo ZORCA01M
+	@return logical, .T. = pode gravar
+/*/
+Static Function VldExclusao( oModel as object ) as logical
+
+	Local cCod      as character
+	Local cQuery    as character
+	Local cAliasQry as character
+	Local lRet      := .T.
+
+	If oModel:GetOperation() == MODEL_OPERATION_DELETE
+
+		cCod      := oModel:GetValue("ZB2MASTER", "ZB2_COD")
+		cQuery    := U_QuerySet("ZB5", {"ZB5_COD"}, { {"ZB5.ZB5_DEFIN = ", cCod} })
+		cAliasQry := MPSysOpenQuery(cQuery)
+
+		If !(cAliasQry)->(EoF())
+			lRet := .F.
+			Help(, , "ZORCA02EXC", , "Definição já usada em orçamento.", 1, 0, ;
+				, , , , , {"Inative a definição em vez de excluir."})
+		EndIf
+
+		(cAliasQry)->(dbCloseArea())
+
+	EndIf
+
+Return lRet
+

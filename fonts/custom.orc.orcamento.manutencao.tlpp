@@ -318,7 +318,7 @@ User Function VldDias( cFieldHrs as character, nDias as numeric ) as logical
 	EndIf
 
 	// Converte dias em horas
-	cHoras := U_NumToHours(nDias * FwFldGet("ZB4_HRDNUM"))
+	cHoras := PadL(U_NumToHours(nDias * FwFldGet("ZB4_HRDNUM")), 8, "0")
 
 	// Seta o valor de horas
 	If !oModelZB6:SetValue( cFieldHrs, cHoras )

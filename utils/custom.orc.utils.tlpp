@@ -226,15 +226,26 @@ Return cHH + ":" + StrZero( nMM, 2 )
 
 	@since 03/11/2026
 /*/
-User Function TotalHrsCharSet( nTotal, cModel )
+User Function TotalHrsCharSet( nTotal as numeric, cModel as character ) as logical
 
-	Local oModelActive := FWModelActive()
-	Local oModel := oModelActive:GetModel(cModel)
+	Local oModel := FWModelActive()
+	Local cAlias := Left( cModel, 3 )   
+	Local cPai   as character
 
-	// Define o campo pelo alias, padrão da tabela
-	Local cField := Left(cModel, 3) + "_TOTHR"
+	oModel:GetModel( cModel ):LoadValue( cAlias + "_TOTHR", U_NumToHours( nTotal ) )
 
-	oModel:LoadValue( cField, U_NumToHours(nTotal) )
+	Do Case
+	Case cModel == "ZB6DETAIL"
+		cPai := "ZB5DETAIL"
+	Case cModel == "ZB5DETAIL"
+		cPai := "ZB4MASTER"
+	Otherwise
+		cPai := ""          
+	EndCase
+
+	If !Empty( cPai )
+		U_CalcHrsRows( cModel, cAlias + "_TTHRNM", cPai, Left( cPai, 3 ) + "_TTHRNM" )
+	EndIf
 
 Return .T.
 
@@ -273,7 +284,7 @@ User Function OnHrDayChange( nHrDia )
 		If !IsBlind()
 			nOpcao := Aviso( "Horas/Dia alterado", "Já existem horas lançadas, como deseja recalcular?", { "Recalc. Horas", "Recalc. Dias" } )
 		Else
-			nOpcao := 1 // Recalcula dias por default
+			nOpcao := 1 // Recalcula horas por default
 		EndIf
 
 		oModelZB5 := oModel:GetModel("ZB5DETAIL")
@@ -376,12 +387,16 @@ User Function VldDefin( cDefin )
 
 	Local cQuery := U_QuerySet( "ZB2", {"ZB2_COD"}, {{"ZB2.ZB2_COD = ", cDefin}, {"ZB2.ZB2_ATIVO = ", ATIVO_SIM}} )
 	Local cAliasQry := MPSysOpenQuery(cQuery)
+	Local lRet := .T.
 
 	If (cAliasQry)->(EoF())
-		Return (Help( , , " HELP", , "Definição não existe ou está inativa", 1, 0 ), .F.)
+		Help( , , " HELP", , "Definição não existe ou está inativa", 1, 0 )
+		lRet := .F.
 	EndIf
 
-Return .T.
+	(cAliasQry)->(dbCloseArea())
+
+Return lRet
 
 /*/{Protheus.doc} VldArea
 	Valida área caso seja escrita pelo usuário,
@@ -399,12 +414,16 @@ User Function VldArea( cArea )
 
 	Local cQuery := U_QuerySet( "ZB1", {"ZB1_COD"}, {{"ZB1.ZB1_COD = ", cArea}, {"ZB1.ZB1_ATIVO = ", ATIVO_SIM}} )
 	Local cAliasQry := MPSysOpenQuery(cQuery)
+	Local lRet := .T.
 
 	If (cAliasQry)->(EoF())
-		Return (Help( , , " HELP", , "Área não existe ou está inativa", 1, 0 ), .F.)
+		Help( , , " HELP", , "Área não existe ou está inativa", 1, 0 )
+		lRet := .F.
 	EndIf
 
-Return .T.
+	(cAliasQry)->(dbCloseArea())
+
+Return lRet
 
 /*/{Protheus.doc} VldAprov
 	Valida se o usuário existe e se
@@ -422,16 +441,19 @@ User Function VldAprov( cUser )
 
 	Local cQuery := U_QuerySet( "ZB3", {"ZB3_USER"}, {{"ZB3.ZB3_USER = ", cUser}} )
 	Local cAliasQry := MPSysOpenQuery(cQuery)
+	Local lRet := .T.
 
 	If !UsrExist(cUser)
-		Return (Help( , , " HELP", , "Usuário não existe", 1, 0 ), .F.)
+		Help( , , " HELP", , "Usuário não existe", 1, 0 )
+		lRet := .F.
+	ElseIf !(cAliasQry)->(EoF())
+		Help( , , " HELP", , "Aprovador já cadastrado", 1, 0 )
+		lRet := .F.
 	EndIf
 
-	If !(cAliasQry)->(EoF())
-		Return (Help( , , " HELP", , "Aprovador já cadastrado", 1, 0 ), .F.)
-	EndIf
+	(cAliasQry)->(dbCloseArea())
 
-Return .T.
+Return lRet
 
 User Function VldHours( cHour )
 

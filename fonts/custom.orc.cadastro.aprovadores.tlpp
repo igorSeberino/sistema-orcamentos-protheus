@@ -41,8 +41,8 @@ Return
 	@return object, o model MVC (MPFormModel)
 /*/
 User Function ModelDef()
-	Local oModel     := MPFormModel():New("ZORCA03M")
-	Local oStruZB3   := FWFormStruct(1, "ZB3")
+	Local oModel   := MPFormModel():New("ZORCA03M", /*bPre*/, { |oModel| VldExclusao(oModel) })
+	Local oStruZB3 := FWFormStruct(1, "ZB3")
 
 	// Monta o trigger de busca do usuário
 	Local aTrigger := FwStruTrigger( "ZB3_USER", "ZB3_NOME", 'FWGetUserName(M->ZB3_USER)', .F., "", 0,,, "01" )
@@ -112,15 +112,8 @@ Return aRotina
 User Function ZORCA03Exc()
 
 	Local oModel := FWLoadModel(NZORCA03 + ".U_ZORCA03")
-
-	// Busca registros da ZB5 associados ao registro da ZB1
-	Local cQuery := U_QuerySet( "ZB4", {"ZB4_COD"}, { {"ZB4.ZB4_USRINC = ", ZB3->ZB3_USER} })
+	Local cQuery := U_QuerySet( "ZB7", {"ZB7_COD"}, { {"ZB7.ZB7_USER = ", ZB3->ZB3_USER}, {"ZB7.ZB7_ACAO != ", ACAO_ENVIADO} })
 	Local cAliasQry := MPSysOpenQuery(cQuery)
-
-	If (cAliasQry)->(EoF())
-		cQuery := U_QuerySet( "ZB4", {"ZB4_COD"}, { {"ZB4.ZB4_USRAPR = ", ZB3->ZB3_USER} })
-		cAliasQry := MPSysOpenQuery(cQuery)
-	EndIf
 
 	// Se tiver registro
 	If !(cAliasQry)->(EoF())
@@ -133,8 +126,12 @@ User Function ZORCA03Exc()
 				oModel:SetOperation(MODEL_OPERATION_UPDATE)
 				oModel:Activate()
 				oModel:SetValue("ZB3MASTER", "ZB3_ATIVO", ATIVO_NAO)
-				oModel:VldData()
-				oModel:CommitData()
+				If oModel:VldData()
+					oModel:CommitData()
+				Else
+					Help(, , "ZORCA03EXC", , oModel:GetErrorMessage()[6], 1, 0, ;
+						, , , , , {"Contate o suporte."})
+				EndIf
 				oModel:DeActivate()
 
 			EndIf
@@ -148,3 +145,36 @@ User Function ZORCA03Exc()
 	(cAliasQry)->(dbCloseArea())
 
 Return
+
+/*/{Protheus.doc} VldExclusao
+	Pos-validacao do modelo: bloqueia exclusao de area usada em item (RN09)
+	@type static function
+	@author igor.seberino
+	@since 25/11/2026
+	@param oModel, object, modelo ZORCA01M
+	@return logical, .T. = pode gravar
+/*/
+Static Function VldExclusao( oModel as object ) as logical
+
+	Local cCod      as character
+	Local cQuery    as character
+	Local cAliasQry as character
+	Local lRet      := .T.
+
+	If oModel:GetOperation() == MODEL_OPERATION_DELETE
+
+		cCod      := oModel:GetValue("ZB3MASTER", "ZB3_USER")
+		cQuery    := U_QuerySet("ZB7", {"ZB7_USER"}, { {"ZB7.ZB7_USER = ", cCod}, {"ZB7.ZB7_ACAO != ", ACAO_ENVIADO} } )
+		cAliasQry := MPSysOpenQuery(cQuery)
+
+		If !(cAliasQry)->(EoF())
+			lRet := .F.
+			Help(, , "ZORCA03EXC", , "Aprovador tem ações em orçamentos.", 1, 0, ;
+				, , , , , {"Inative o aprovador em vez de excluir."})
+		EndIf
+
+		(cAliasQry)->(dbCloseArea())
+
+	EndIf
+
+Return lRet
