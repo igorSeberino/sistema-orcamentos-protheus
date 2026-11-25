@@ -17,19 +17,19 @@ using namespace custom.orc.utils
 /*/
 User Function ZORCA04()
 
-    Local oBrowse := FWMarkBrowse():New()
+	Local oBrowse := FWMarkBrowse():New()
 
-    oBrowse:SetAlias("ZB4")
-    oBrowse:SetDescription("Orçamentos (browse e manutenção)")
+	oBrowse:SetAlias("ZB4")
+	oBrowse:SetDescription("Orçamentos (browse e manutenção)")
 
-    // oBrowse:AddLegend(/* Campo = Valor */,/* Cor */,/* Legenda */)
+	// oBrowse:AddLegend(/* Campo = Valor */,/* Cor */,/* Legenda */)
 	oBrowse:AddLegend("ZB4_STATUS == '" + STATUS_RASCUNHO + "'", "WHITE", "Rascunho")
 	oBrowse:AddLegend("ZB4_STATUS == '" + STATUS_ENVIADO + "'", "YELLOW", "Enviado")
 	oBrowse:AddLegend("ZB4_STATUS == '" + STATUS_APROVADO + "'", "GREEN", "Aprovado")
 	oBrowse:AddLegend("ZB4_STATUS == '" + STATUS_REPROVADO + "'", "RED", "Reprovado")
 
 
-    oBrowse:Activate()
+	oBrowse:Activate()
 
 Return
 
@@ -46,8 +46,8 @@ Return
 /*/
 User Function ModelDef()
 
-    Local oModel := MPFormModel():New("ZORCA04M")
-    Local oStruZB4 := FWFormStruct(1, "ZB4")
+	Local oModel := MPFormModel():New("ZORCA04M")
+	Local oStruZB4 := FWFormStruct(1, "ZB4")
 	Local oStruZB5 := FWFormStruct(1, "ZB5")
 	Local oStruZB6 := FWFormStruct(1, "ZB6")
 	Local oStruZB7 := FWFormStruct(1, "ZB7")
@@ -55,16 +55,16 @@ User Function ModelDef()
 	// Seta os triggers do model
 	TriggerSet( oStruZB4, oStruZB5, oStruZB6 )
 
-    oModel:AddFields("ZB4MASTER", /*cOwner*/, oStruZB4)
+	oModel:AddFields("ZB4MASTER", /*cOwner*/, oStruZB4)
 	oModel:AddGrid("ZB5DETAIL", "ZB4MASTER", oStruZB5)
 	oModel:AddGrid("ZB6DETAIL", "ZB5DETAIL", oStruZB6)
 	oModel:AddGrid("ZB7DETAIL", "ZB4MASTER", oStruZB7)
-    oModel:SetDescription('Modelo de Orçamentos')
+	oModel:SetDescription('Modelo de Orçamentos')
 
 	// Seta os relacionamentos do model
 	RelationSet( @oModel )
 
-    oModel:GetModel('ZB4MASTER'):SetDescription('Modelo de Orçamentos')
+	oModel:GetModel('ZB4MASTER'):SetDescription('Modelo de Orçamentos')
 	oModel:GetModel("ZB5DETAIL"):SetUniqueLine( { "ZB5_ITEM" } )
 	oModel:GetModel("ZB6DETAIL"):SetUniqueLine( { "ZB6_SUB" } )
 
@@ -81,7 +81,7 @@ User Function ModelDef()
 	// Define chave primária da entidade Model
 	oModel:SetPrimaryKey({ "ZB4_FILIAL", "ZB4_COD", "ZB4_REV" })
 
-    oModel:SetActivate({ |oModel| U_ZB4Activate( @oModel ) })
+	oModel:SetActivate({ |oModel| U_ZB4Activate( @oModel ) })
 
 	// Condiciona a edição do orçamento ao status de rascunho
 	oModel:SetVldActive( { |oModel| U_VldActivate( @oModel ) } )
@@ -103,23 +103,23 @@ Return oModel
 /*/
 User Function ViewDef()
 
-    Local oModel := FWLoadModel(NZORCA04 + ".ZORCA04")
-    Local oStruZB4 := FWFormStruct(2, "ZB4")
+	Local oModel := FWLoadModel(NZORCA04 + ".ZORCA04")
+	Local oStruZB4 := FWFormStruct(2, "ZB4")
 	Local oStruZB5 := FWFormStruct(2, "ZB5")
 	Local oStruZB6 := FWFormStruct(2, "ZB6")
 	Local oStruZB7 := FWFormStruct(2, "ZB7")
-    Local oView := FWFormView():New()
+	Local oView := FWFormView():New()
 
 	// Esconde campos do usuário (controle interno)
 	RemoveFields( oStruZB4, oStruZB5, oStruZB6, oStruZB7 )
 
-    oView:SetModel( oModel )
-    oView:AddField( 'VIEW_ZB4', oStruZB4, 'ZB4MASTER' )
+	oView:SetModel( oModel )
+	oView:AddField( 'VIEW_ZB4', oStruZB4, 'ZB4MASTER' )
 	oView:AddGrid(  'VIEW_ZB5', oStruZB5, 'ZB5DETAIL' )
 	oView:AddGrid(  'VIEW_ZB6', oStruZB6, 'ZB6DETAIL' )
 	oView:AddGrid(  'VIEW_ZB7', oStruZB7, 'ZB7DETAIL' )
 
-    oView:CreateHorizontalBox( 'TELA', 60 )
+	oView:CreateHorizontalBox( 'TELA', 60 )
 	oView:CreateHorizontalBox( 'PASTAS', 40 )
 
 	oView:CreateFolder( 'FOLDER', 'PASTAS' )
@@ -130,7 +130,7 @@ User Function ViewDef()
 	oView:CreateHorizontalBox('BOX_ZB6', 50, , ,  'FOLDER', 'ATIVIDADES')
 	oView:CreateHorizontalBox('BOX_ZB7', 100, , , 'FOLDER', 'HISTORICO')
 
-    oView:SetOwnerView( 'VIEW_ZB4', 'TELA' )
+	oView:SetOwnerView( 'VIEW_ZB4', 'TELA' )
 	oView:SetOwnerView( 'VIEW_ZB5', 'BOX_ZB5' )
 	oView:SetOwnerView( 'VIEW_ZB6', 'BOX_ZB6' )
 	oView:SetOwnerView( 'VIEW_ZB7', 'BOX_ZB7' )
@@ -159,11 +159,11 @@ Return oView
 /*/
 User Function MenuDef()
 
-    Local aRotina := {}
-    //Define a chamada das actions do menu 
-    Local cActionString := FormatStr("VIEWDEF.%c.ZORCA04", NZORCA04)
+	Local aRotina := {}
+	//Define a chamada das actions do menu
+	Local cActionString := FormatStr("VIEWDEF.%c.ZORCA04", NZORCA04)
 
-    ADD OPTION aRotina Title 'Visualizar'         Action cActionString                   OPERATION 2 ACCESS 0
+	ADD OPTION aRotina Title 'Visualizar'         Action cActionString                   OPERATION 2 ACCESS 0
 	ADD OPTION aRotina Title 'Incluir'            Action cActionString                   OPERATION 3 ACCESS 0
 	ADD OPTION aRotina Title 'Alterar'            Action cActionString                   OPERATION 4 ACCESS 0
 	ADD OPTION aRotina Title 'Excluir'            Action cActionString                   OPERATION 5 ACCESS 0
@@ -177,7 +177,7 @@ User Function MenuDef()
 		ADD OPTION aRotina Title 'Aprovação'      Action NZORCA05 + ".U_ZORCA05( 'APR' )" OPERATION 5 ACCESS 0
 		ADD OPTION aRotina Title 'Estornar'       Action NZORCA05 + ".U_ZORCA05( 'EST' )" OPERATION 5 ACCESS 0
 	EndIf
-	
+
 Return aRotina
 
 /*/{Protheus.doc} VldData
@@ -274,28 +274,23 @@ Return
 
 	@return logical
 /*/
-User Function VldHrs( cFieldDays )
+User Function VldHrs( cFieldDays as character , nHoras as numeric )
 
 	Local oModel  := FWModelActive()
 	Local oModelZB6 := oModel:GetModel("ZB6DETAIL")
-    Local nDias  as numeric
-    Local nHoras as numeric
+	Local nDias  as numeric
 
-	// Captura as horas do campo
-	// ReadVar() retorna o nome do campo
-    nHoras := &(ReadVar())
-
-    If nHoras < 0
-        Help( , , "	HELP", , "Horas não podem ser negativas.", 1, 0 )
-        Return .F.
-    EndIf
+	If nHoras < 0
+		Help( , , "	HELP", , "Horas não podem ser negativas.", 1, 0 )
+		Return .F.
+	EndIf
 
 	// Converte horas em dias
-    nDias := nHoras / FwFldGet("ZB4_HRDNUM")
+	nDias := nHoras / FwFldGet("ZB4_HRDNUM")
 
 	// Seta na var de dias
-    oModelZB6:LoadValue( cFieldDays, nDias )
-	
+	oModelZB6:LoadValue( cFieldDays, nDias )
+
 Return .T.
 
 /*/{Protheus.doc} VldDias
@@ -310,29 +305,28 @@ Return .T.
 
 	@return logical
 /*/
-User Function VldDias( cFieldHrs as character ) as logical
+User Function VldDias( cFieldHrs as character, nDias as numeric ) as logical
 
-    Local oModel  := FWModelActive()
+	Local oModel  := FWModelActive()
 	Local oModelZB6 := oModel:GetModel("ZB6DETAIL")
-	Local nDias as numeric
-    Local cHoras as numeric
+	Local cHoras as character
+	Local lRet := .T.
 
-	// Captura os dias do campo
-	// ReadVar() retorna o nome do campo
-	nDias := &(ReadVar())
-
-    If nDias < 0
-        Help( , , "	HELP", , "Dias não podem ser negativos.", 1, 0 )
-        Return .F.
-    EndIf
+	If nDias < 0
+		Help( , , "	HELP", , "Dias não podem ser negativos.", 1, 0 )
+		Return .F.
+	EndIf
 
 	// Converte dias em horas
-    cHoras := U_NumToHours(nDias * FwFldGet("ZB4_HRDNUM"))
+	cHoras := U_NumToHours(nDias * FwFldGet("ZB4_HRDNUM"))
 
 	// Seta o valor de horas
-    oModelZB6:SetValue( cFieldHrs, cHoras )
+	If !oModelZB6:SetValue( cFieldHrs, cHoras )
+		Help( , , "HELP", , "Ocorreu um erro ao setar o valor de horas.", 1, 0 )
+		lRet := .F.
+	EndIf
 
-Return .T.
+Return lRet
 
 /*/{Protheus.doc} ZB6CalcHrs
 	Calcula as horas totais da ZB6,
@@ -356,7 +350,7 @@ User Function ZB6CalcHrs()
 
 	Local nTotal := nDoc + nDev + nAna + nVal
 
-Return nTotal                                       
+Return nTotal
 
 /*/{Protheus.doc} CalcHrsRows
 	Calcula as horas totais dos elementos
@@ -429,7 +423,7 @@ Static Function RemoveFields( oStruZB4, oStruZB5, oStruZB6, oStruZB7 )
 	oStruZB7:RemoveField("ZB7_COD")
 	oStruZB7:RemoveField("ZB7_REV")
 
-Return .T.                                                                                                    
+Return .T.
 
 User Function VldActivate( oModel as object )
 
@@ -437,12 +431,12 @@ User Function VldActivate( oModel as object )
 	local nOperation := oModel:GetOperation()
 
 	If ( nOperation == MODEL_OPERATION_UPDATE .Or. nOperation == MODEL_OPERATION_DELETE ) .And. ZB4->ZB4_STATUS != STATUS_RASCUNHO
-	
+
 		oModel:SetErrorMessage( "ZB4MASTER", "ZB4_STATUS", "ZB4MASTER", "ZB4_STATUS", "ERRO", ;
-        "Orçamento enviado não pode ser alterado nem excluído.", ;
-        "Utilize visualizar ou aguarde retorno" )
+			"Orçamento enviado não pode ser alterado nem excluído.", ;
+			"Utilize visualizar ou aguarde retorno" )
 		lRet := .F.
-	
+
 	EndIf
 
 Return lRet
@@ -451,25 +445,25 @@ Static Function RelationSet( oModel )
 
 	// Define relação entre ZB4 e ZB5
 	oModel:SetRelation("ZB5DETAIL", { ;
-        {"ZB5_FILIAL", "xFilial('ZB5')"}, ;
-        {"ZB5_COD"   , "ZB4_COD"}, ;
-        {"ZB5_REV"   , "ZB4_REV"}  ;
-    }, ZB5->(IndexKey(1)))
+		{"ZB5_FILIAL", "xFilial('ZB5')"}, ;
+		{"ZB5_COD"   , "ZB4_COD"}, ;
+		{"ZB5_REV"   , "ZB4_REV"}  ;
+		}, ZB5->(IndexKey(1)))
 
 	// Define relação entre ZB5 e ZB6
 	oModel:SetRelation("ZB6DETAIL", { ;
-        {"ZB6_FILIAL" , "xFilial('ZB6')"}, ;
-        {"ZB6_COD"    , "ZB4_COD"}, ;
-        {"ZB6_REV"    , "ZB4_REV"},  ;
+		{"ZB6_FILIAL" , "xFilial('ZB6')"}, ;
+		{"ZB6_COD"    , "ZB4_COD"}, ;
+		{"ZB6_REV"    , "ZB4_REV"},  ;
 		{"ZB6_ITEM"   , "ZB5_ITEM"}  ;
-    }, ZB6->(IndexKey(1)))
-	
+		}, ZB6->(IndexKey(1)))
+
 	// Define relação entre ZB7 e ZB4
 	oModel:SetRelation("ZB7DETAIL", { ;
-        {"ZB7_FILIAL" , "xFilial('ZB7')"}, ;
-        {"ZB7_COD"    , "ZB4_COD"}, ;
-        {"ZB7_REV"    , "ZB4_REV"}  ;
-    }, ZB7->(IndexKey(1)))
+		{"ZB7_FILIAL" , "xFilial('ZB7')"}, ;
+		{"ZB7_COD"    , "ZB4_COD"}, ;
+		{"ZB7_REV"    , "ZB4_REV"}  ;
+		}, ZB7->(IndexKey(1)))
 
 Return
 
@@ -510,17 +504,19 @@ User Function ModelCommit( oModel )
 	Local n1 as numeric
 	Local n2 as numeric
 	Local nValue as numeric
+	Local lRet := .T.
+	Local aSaveRows := FWSaveRows() // Grava a linha que estava posicionada
 
 	For n1 := 1 to oModelZB5:Length()
 
 		If !oModelZB5:IsDeleted(n1)
 
-            oModelZB5:GoLine(n1)
+			oModelZB5:GoLine(n1)
 
-            // Percorre cada atividade do item
+			// Percorre cada atividade do item
 			For n2 := 1 to oModelZB6:Length()
 
-				If !oModelZB6:IsDeleted(n2) 
+				If !oModelZB6:IsDeleted(n2)
 
 					oModelZB6:GoLine(n2)
 					nValue := oModelZB6:GetValue("ZB6_TTHRNM")
@@ -536,19 +532,26 @@ User Function ModelCommit( oModel )
 
 	Next n1
 
-	FWFormCommit( oModel )
+	FWRestRows( aSaveRows ) // Restaura a linha que estava posicionada
 
-Return .T.
+	If !FWFormCommit( oModel )
+		Help( , , "ZORCA04", , "Ocorreu um erro ao gravar o orçamento.", 1, 0 )
+		lRet := .F.
+	EndIf
+
+Return lRet
 
 User Function VldAprovador()
 
 	Local lRet := .F.
-    Local cQuery := U_QuerySet( "ZB3", {"ZB3_USER"}, {{"ZB3.ZB3_USER = ", RetCodUsr()}} )
-    Local cAliasQry := MPSysOpenQuery(cQuery)
+	Local cQuery := U_QuerySet( "ZB3", {"ZB3_USER"}, { {"ZB3.ZB3_USER = ", RetCodUsr()}, {"ZB3.ZB3_ATIVO = ", ATIVO_SIM} } )
+	Local cAliasQry := MPSysOpenQuery(cQuery)
 
-    If !(cAliasQry)->(EoF())
-        lRet := .T.
-    EndIf
+	If !(cAliasQry)->(EoF())
+		lRet := .T.
+	EndIf
+
+	(cAliasQry)->(DbCloseArea())
 
 Return lRet
 
@@ -559,4 +562,4 @@ Static Function AtivSimilares( oView )
 
 	custom.orc.consulta.historico.U_ZORCA07( cDef )
 
-Return 
+Return

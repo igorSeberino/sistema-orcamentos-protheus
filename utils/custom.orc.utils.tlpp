@@ -24,25 +24,25 @@ using namespace custom.orc.orcamento.manutencao
 /*/
 User Function ModelActivate( oModel, cAlias )
 
-    Local cCodigo
-    Local cCodField := cAlias + "_COD"
-    Local cModel := cAlias + "MASTER"
+	Local cCodigo
+	Local cCodField := cAlias + "_COD"
+	Local cModel := cAlias + "MASTER"
 
-    If oModel:GetOperation() == MODEL_OPERATION_INSERT
+	If oModel:GetOperation() == MODEL_OPERATION_INSERT
 
-        cCodigo := GetSXENum( cAlias, cCodField )
+		cCodigo := GetSXENum( cAlias, cCodField )
 
-        Do While U_CodExiste(cCodigo, cAlias)
+		Do While U_CodExiste(cCodigo, cAlias)
 
-            cCodigo := GetSXENum( cAlias, cCodField )
-            
-        EndDo
+			cCodigo := GetSXENum( cAlias, cCodField )
 
-        oModel:SetValue( cModel, cCodField, cCodigo )
+		EndDo
 
-    EndIf
+		oModel:SetValue( cModel, cCodField, cCodigo )
 
-Return 
+	EndIf
+
+Return
 
 /*/{Protheus.doc} CodExiste
 	Verifica se ja existe produto (nao deletado) com o codigo
@@ -60,17 +60,17 @@ Return
 /*/
 User Function CodExiste( cCod, cAlias )
 
-    Local lExiste := .F.
-    Local cCodField := cAlias + '_COD'
-    Local cCodFieldSearch := cAlias + "." + cCodField + " = "
+	Local lExiste := .F.
+	Local cCodField := cAlias + '_COD'
+	Local cCodFieldSearch := cAlias + "." + cCodField + " = "
 
-    Local cQuery := U_QuerySet( cAlias, { cCodField }, { { cCodFieldSearch, cCod } } )
+	Local cQuery := U_QuerySet( cAlias, { cCodField }, { { cCodFieldSearch, cCod } } )
 
-    Local cAliasQry := MPSysOpenQuery(cQuery)
+	Local cAliasQry := MPSysOpenQuery(cQuery)
 
-    lExiste := !(cAliasQry)->(EoF())
+	lExiste := !(cAliasQry)->(EoF())
 
-    (cAliasQry)->(dbCloseArea())
+	(cAliasQry)->(dbCloseArea())
 
 Return lExiste
 
@@ -96,73 +96,73 @@ Return lExiste
 /*/
 User Function QuerySet( cAlias, aParamsSelect, aParamsWhere )
 
-    Local oStmt := FWPreparedStatement():New()
-    Local cQueryBase as character
-    Local cQueryRet as character
-    Local nI as integer
+	Local oStmt := FWPreparedStatement():New()
+	Local cQueryBase as character
+	Local cQueryRet as character
+	Local nI as integer
 
-    // Começa a montar a query
-    cQueryBase := " SELECT "
+	// Começa a montar a query
+	cQueryBase := " SELECT "
 
-    // Adiciona parâmetros conforme passado
-    // no array, de forma dinâmica
-    For nI := 1 to Len(aParamsSelect)
-        If nI != 1
-            cQueryBase += ", "
-        EndIf
-        cQueryBase += aParamsSelect[nI]
-    Next nI
+	// Adiciona parâmetros conforme passado
+	// no array, de forma dinâmica
+	For nI := 1 to Len(aParamsSelect)
+		If nI != 1
+			cQueryBase += ", "
+		EndIf
+		cQueryBase += aParamsSelect[nI]
+	Next nI
 
-    // Adição dinâmica de table
-    cQueryBase += " FROM " + RetSQLName(cAlias) + " " +  cAlias
+	// Adição dinâmica de table
+	cQueryBase += " FROM " + RetSQLName(cAlias) + " " +  cAlias
 
-    // Adiciona parâmetros conforme passado
-    // no array, de forma dinâmica
-    If Len(aParamsWhere) > 0
-        For nI := 1 to Len(aParamsWhere)
-            If nI == 1
-                cQueryBase += " WHERE " + cAlias + ".D_E_L_E_T_ = ' ' "
-                cQueryBase += " AND " + cAlias + "_FILIAL = ? "
-                cQueryBase += " AND " + aParamsWhere[nI][1] + " ? "
-            Else
-                cQueryBase += " AND " + aParamsWhere[nI][1] + " ? "
-            EndIf
-        Next nI
-    // Garante o filtro de itens deletados
-    // mesmo sem parâmetros de busca
-    Else   
-        cQueryBase += " WHERE " + cAlias + ".D_E_L_E_T_ = ' ' "
-    EndIf
+	// Adiciona parâmetros conforme passado
+	// no array, de forma dinâmica
+	If Len(aParamsWhere) > 0
+		For nI := 1 to Len(aParamsWhere)
+			If nI == 1
+				cQueryBase += " WHERE " + cAlias + ".D_E_L_E_T_ = ' ' "
+				cQueryBase += " AND " + cAlias + "_FILIAL = ? "
+				cQueryBase += " AND " + aParamsWhere[nI][1] + " ? "
+			Else
+				cQueryBase += " AND " + aParamsWhere[nI][1] + " ? "
+			EndIf
+		Next nI
+		// Garante o filtro de itens deletados
+		// mesmo sem parâmetros de busca
+	Else
+		cQueryBase += " WHERE " + cAlias + ".D_E_L_E_T_ = ' ' "
+	EndIf
 
-    oStmt:SetQuery(cQueryBase)
+	oStmt:SetQuery(cQueryBase)
 
-    oStmt:SetString(1, xFilial(cAlias))
+	oStmt:SetString(1, xFilial(cAlias))
 
-    // Preenchimento dinâmico dos parâmetros
-    // de busca    
-    For nI := 1 to Len(aParamsWhere)
+	// Preenchimento dinâmico dos parâmetros
+	// de busca
+	For nI := 1 to Len(aParamsWhere)
 
-        If ValType(aParamsWhere[nI][2]) == "C"
+		If ValType(aParamsWhere[nI][2]) == "C"
 
-            oStmt:SetString(nI + 1, aParamsWhere[nI][2])
+			oStmt:SetString(nI + 1, aParamsWhere[nI][2])
 
-        ElseIf ValType(aParamsWhere[nI][2]) == "N"
+		ElseIf ValType(aParamsWhere[nI][2]) == "N"
 
-            oStmt:SetNumeric(nI + 1, aParamsWhere[nI][2])
+			oStmt:SetNumeric(nI + 1, aParamsWhere[nI][2])
 
-        ElseIf ValType(aParamsWhere[nI][2]) == "D"
+		ElseIf ValType(aParamsWhere[nI][2]) == "D"
 
-            oStmt:SetDate(nI + 1, aParamsWhere[nI][2])
+			oStmt:SetDate(nI + 1, aParamsWhere[nI][2])
 
-        ElseIf ValType(aParamsWhere[nI][2]) == "L"
+		ElseIf ValType(aParamsWhere[nI][2]) == "L"
 
-            oStmt:SetLogical(nI + 1, aParamsWhere[nI][2])
+			oStmt:SetLogical(nI + 1, aParamsWhere[nI][2])
 
-        EndIf
+		EndIf
 
-    Next nI
+	Next nI
 
-    cQueryRet := oStmt:GetFixQuery()
+	cQueryRet := oStmt:GetFixQuery()
 
 Return cQueryRet
 
@@ -175,17 +175,17 @@ Return cQueryRet
 
 	@since 27/10/2026
 
-	@return logical
+	@return numeric
 /*/
-User Function HoursToNum( cHour ) 
+User Function HoursToNum( cHour )
 
 	Local nHH         as numeric
 	Local nMM         as numeric
-    Local nValue      as numeric
-    Local nHourLength as numeric
+	Local nValue      as numeric
+	Local nHourLength as numeric
 
-    cHour := StrTran( AllTrim( cHour ), ".", "" )
-    nHourLength := Len(AllTrim(cHour)) - 3
+	cHour := StrTran( AllTrim( cHour ), ".", "" )
+	nHourLength := Len(AllTrim(cHour)) - 3
 
 	// Captura hora e minuto do campo
 	nHH := Val( Left( cHour, nHourLength ) )
@@ -207,12 +207,12 @@ Return nValue
 
 	@return logical
 /*/
-User Function NumToHours( nValue ) 
+User Function NumToHours( nValue )
 
-    Local nMinutos := Round( nValue * 60, 0 )        // arredonda o total em minutos
-    Local nHH      := Int( nMinutos / 60 )
-    Local nMM      := nMinutos % 60
-    Local cHH      := AllTrim( Transform( nHH, "@E 999,999,999" ) )
+	Local nMinutos := Round( nValue * 60, 0 )        // arredonda o total em minutos
+	Local nHH      := Int( nMinutos / 60 )
+	Local nMM      := nMinutos % 60
+	Local cHH      := AllTrim( Transform( nHH, "@E 999,999,999" ) )
 
 Return cHH + ":" + StrZero( nMM, 2 )
 
@@ -229,19 +229,12 @@ Return cHH + ":" + StrZero( nMM, 2 )
 User Function TotalHrsCharSet( nTotal, cModel )
 
 	Local oModelActive := FWModelActive()
-    Local oModel := oModelActive:GetModel(cModel)
-	Local oStruct  := oModel:GetStruct()
+	Local oModel := oModelActive:GetModel(cModel)
 
-    // Define o campo pelo alias, padrão da tabela
+	// Define o campo pelo alias, padrão da tabela
 	Local cField := Left(cModel, 3) + "_TOTHR"
 
-    // Habilita a edição 
-	oStruct:SetProperty( cField, MODEL_FIELD_WHEN, { || .T. } )
-
-	oModel:SetValue( cField, U_NumToHours(nTotal) )
-
-    // Desabilita a edição
-	oStruct:SetProperty( cField, MODEL_FIELD_WHEN, { || .F. } )
+	oModel:LoadValue( cField, U_NumToHours(nTotal) )
 
 Return .T.
 
@@ -264,20 +257,24 @@ User Function OnHrDayChange( nHrDia )
 	Local oModelZB6 as object
 	Local n1 as numeric
 	Local n2 as numeric
-    Local aSaveRows as array
-    Local nDoc as numeric
-    Local nDev as numeric
-    Local nAna as numeric
-    Local nVal as numeric
-    Local nOpcao as numeric
+	Local aSaveRows as array
+	Local nDoc as numeric
+	Local nDev as numeric
+	Local nAna as numeric
+	Local nVal as numeric
+	Local nOpcao as numeric
 
-    // Verifica se já foram calculadas as horas de algo (necessário recalcular)
+	// Verifica se já foram calculadas as horas de algo (necessário recalcular)
 	If M->ZB4_TTHRNM > 0
 
-        // Salva a linha que estava posicionada de cada model
-        aSaveRows := FWSaveRows()
+		// Salva a linha que estava posicionada de cada model
+		aSaveRows := FWSaveRows()
 
-        nOpcao := Aviso( "Horas/Dia alterado", "Já existem horas lançadas, como deseja recalcular?", { "Recalc. Horas", "Recalc. Dias" } )
+		If !IsBlind()
+			nOpcao := Aviso( "Horas/Dia alterado", "Já existem horas lançadas, como deseja recalcular?", { "Recalc. Horas", "Recalc. Dias" } )
+		Else
+			nOpcao := 1 // Recalcula dias por default
+		EndIf
 
 		oModelZB5 := oModel:GetModel("ZB5DETAIL")
 		oModelZB6 := oModel:GetModel("ZB6DETAIL")
@@ -285,30 +282,30 @@ User Function OnHrDayChange( nHrDia )
 		If nOpcao == 1
 			// Valida os dias novamente
 
-            // Percorre cada item do orçamento
+			// Percorre cada item do orçamento
 			For n1 := 1 to oModelZB5:Length()
 
 				If !oModelZB5:IsDeleted(n1)
 
-                    oModelZB5:GoLine(n1)
+					oModelZB5:GoLine(n1)
 
-                    // Percorre cada atividade do item
+					// Percorre cada atividade do item
 					For n2 := 1 to oModelZB6:Length()
 
 						If !oModelZB6:IsDeleted(n2)
 
-                            oModelZB6:GoLine(n2)
+							oModelZB6:GoLine(n2)
 
-                            // Grava recalculado em cada campo
-                            nDoc := oModelZB6:GetValue("ZB6_DDOC") * nHrDia
-                            nDev := oModelZB6:GetValue("ZB6_DDEV") * nHrDia
-                            nAna := oModelZB6:GetValue("ZB6_DANA") * nHrDia
-                            nVal := oModelZB6:GetValue("ZB6_DVAL") * nHrDia
+							// Grava recalculado em cada campo
+							nDoc := oModelZB6:GetValue("ZB6_DDOC") * nHrDia
+							nDev := oModelZB6:GetValue("ZB6_DDEV") * nHrDia
+							nAna := oModelZB6:GetValue("ZB6_DANA") * nHrDia
+							nVal := oModelZB6:GetValue("ZB6_DVAL") * nHrDia
 
-                            oModelZB6:SetValue( "ZB6_HDOC", U_NumToHours(nDoc) )
-                            oModelZB6:SetValue( "ZB6_HDEV", U_NumToHours(nDev) )
-                            oModelZB6:SetValue( "ZB6_HANA", U_NumToHours(nAna) )
-                            oModelZB6:SetValue( "ZB6_HVAL", U_NumToHours(nVal) )
+							oModelZB6:SetValue( "ZB6_HDOC", U_NumToHours(nDoc) )
+							oModelZB6:SetValue( "ZB6_HDEV", U_NumToHours(nDev) )
+							oModelZB6:SetValue( "ZB6_HANA", U_NumToHours(nAna) )
+							oModelZB6:SetValue( "ZB6_HVAL", U_NumToHours(nVal) )
 
 						EndIf
 
@@ -321,30 +318,30 @@ User Function OnHrDayChange( nHrDia )
 		Else
 			// Valida as horas novamente
 
-            // Percorre cada item do orçamento
+			// Percorre cada item do orçamento
 			For n1 := 1 to oModelZB5:Length()
 
 				If !oModelZB5:IsDeleted(n1)
 
-                    oModelZB5:GoLine(n1)
+					oModelZB5:GoLine(n1)
 
-                    // Percorre cada atividade do item
+					// Percorre cada atividade do item
 					For n2 := 1 to oModelZB6:Length()
 
 						If !oModelZB6:IsDeleted(n2)
 
-                            oModelZB6:GoLine(n2)
+							oModelZB6:GoLine(n2)
 
-                            // Grava recalculado em cada campo
-                            nDoc := oModelZB6:GetValue("ZB6_HDOCNM") / nHrDia
-                            nDev := oModelZB6:GetValue("ZB6_HDEVNM") / nHrDia
-                            nAna := oModelZB6:GetValue("ZB6_HANANM") / nHrDia
-                            nVal := oModelZB6:GetValue("ZB6_HVALNM") / nHrDia
+							// Grava recalculado em cada campo
+							nDoc := oModelZB6:GetValue("ZB6_HDOCNM") / nHrDia
+							nDev := oModelZB6:GetValue("ZB6_HDEVNM") / nHrDia
+							nAna := oModelZB6:GetValue("ZB6_HANANM") / nHrDia
+							nVal := oModelZB6:GetValue("ZB6_HVALNM") / nHrDia
 
-                            oModelZB6:SetValue( "ZB6_DDOC", nDoc )
-                            oModelZB6:SetValue( "ZB6_DDEV", nDev )
-                            oModelZB6:SetValue( "ZB6_DANA", nAna )
-                            oModelZB6:SetValue( "ZB6_DVAL", nVal )
+							oModelZB6:SetValue( "ZB6_DDOC", nDoc )
+							oModelZB6:SetValue( "ZB6_DDEV", nDev )
+							oModelZB6:SetValue( "ZB6_DANA", nAna )
+							oModelZB6:SetValue( "ZB6_DVAL", nVal )
 
 						EndIf
 
@@ -355,9 +352,9 @@ User Function OnHrDayChange( nHrDia )
 			Next n1
 
 		EndIf
-		
-        // Retorna às linhas originais
-        FWRestRows( aSaveRows )
+
+		// Retorna às linhas originais
+		FWRestRows( aSaveRows )
 
 	EndIf
 
@@ -377,12 +374,12 @@ Return .T.
 /*/
 User Function VldDefin( cDefin )
 
-    Local cQuery := U_QuerySet( "ZB2", {"ZB2_COD"}, {{"ZB2.ZB2_COD = ", cDefin}, {"ZB2.ZB2_ATIVO = ", ATIVO_SIM}} )
-    Local cAliasQry := MPSysOpenQuery(cQuery)
+	Local cQuery := U_QuerySet( "ZB2", {"ZB2_COD"}, {{"ZB2.ZB2_COD = ", cDefin}, {"ZB2.ZB2_ATIVO = ", ATIVO_SIM}} )
+	Local cAliasQry := MPSysOpenQuery(cQuery)
 
-    If (cAliasQry)->(EoF())
-        Return (Help( , , " HELP", , "Definição não existe ou está inativa", 1, 0 ), .F.)
-    EndIf
+	If (cAliasQry)->(EoF())
+		Return (Help( , , " HELP", , "Definição não existe ou está inativa", 1, 0 ), .F.)
+	EndIf
 
 Return .T.
 
@@ -400,12 +397,12 @@ Return .T.
 /*/
 User Function VldArea( cArea )
 
-    Local cQuery := U_QuerySet( "ZB1", {"ZB1_COD"}, {{"ZB1.ZB1_COD = ", cArea}, {"ZB1.ZB1_ATIVO = ", ATIVO_SIM}} )
-    Local cAliasQry := MPSysOpenQuery(cQuery)
+	Local cQuery := U_QuerySet( "ZB1", {"ZB1_COD"}, {{"ZB1.ZB1_COD = ", cArea}, {"ZB1.ZB1_ATIVO = ", ATIVO_SIM}} )
+	Local cAliasQry := MPSysOpenQuery(cQuery)
 
-    If (cAliasQry)->(EoF())
-        Return (Help( , , " HELP", , "Área não existe ou está inativa", 1, 0 ), .F.)
-    EndIf
+	If (cAliasQry)->(EoF())
+		Return (Help( , , " HELP", , "Área não existe ou está inativa", 1, 0 ), .F.)
+	EndIf
 
 Return .T.
 
@@ -423,16 +420,16 @@ Return .T.
 /*/
 User Function VldAprov( cUser )
 
-    Local cQuery := U_QuerySet( "ZB3", {"ZB3_USER"}, {{"ZB3.ZB3_USER = ", cUser}} )
-    Local cAliasQry := MPSysOpenQuery(cQuery)
+	Local cQuery := U_QuerySet( "ZB3", {"ZB3_USER"}, {{"ZB3.ZB3_USER = ", cUser}} )
+	Local cAliasQry := MPSysOpenQuery(cQuery)
 
-    If !UsrExist(cUser)
-        Return (Help( , , " HELP", , "Usuário não existe", 1, 0 ), .F.)
-    EndIf
+	If !UsrExist(cUser)
+		Return (Help( , , " HELP", , "Usuário não existe", 1, 0 ), .F.)
+	EndIf
 
-    If !(cAliasQry)->(EoF())
-        Return (Help( , , " HELP", , "Aprovador já cadastrado", 1, 0 ), .F.)
-    EndIf
+	If !(cAliasQry)->(EoF())
+		Return (Help( , , " HELP", , "Aprovador já cadastrado", 1, 0 ), .F.)
+	EndIf
 
 Return .T.
 
@@ -443,8 +440,8 @@ User Function VldHours( cHour )
 	// Captura minuto do campo
 	nMM := Val( Right( AllTrim(cHour) , 2 ) )
 
-    If nMM < 0 .Or. nMM > 59
-        Return (Help( , , " HELP", , "Valor de minutos inválido", 1, 0 ), .F.)
-    EndIf
+	If nMM < 0 .Or. nMM > 59
+		Return (Help( , , " HELP", , "Valor de minutos inválido", 1, 0 ), .F.)
+	EndIf
 
 Return .T.
