@@ -7,96 +7,96 @@ using namespace custom.orc.utils
 
 User Function ZORCR01()
 
-    Local oReport := ReportDef()
+	Local oReport := ReportDef()
 
-    oReport:PrintDialog()
+	oReport:PrintDialog()
 
 Return
 
 Static Function ReportDef()
 
-    Local oReport  := TReport():New( "ZORCR01", "Impressao do Orcamento", /*cPergunta*/, ;
-                    { |oRep| ReportPrint( oRep ) }, "Imprime o orcamento posicionado" )
-    Local oSecCab  := TRSection():New( oReport, "Orcamento", { "ZB4" } )
-    Local oSecItem := TRSection():New( oSecCab, "Orcamento", { "ZB4" } )
-    Local oSecAtiv := TRSection():New( oSecItem, "Orcamento", { "ZB4" } )
+	Local oReport  := TReport():New( "ZORCR01", "Impressao do Orcamento", /*cPergunta*/, ;
+		{ |oRep| ReportPrint( oRep ) }, "Imprime o orcamento posicionado" )
+	Local oSecCab  := TRSection():New( oReport, "Orcamento", { "ZB4" } )
+	Local oSecItem := TRSection():New( oSecCab, "Orcamento", { "ZB4" } )
+	Local oSecAtiv := TRSection():New( oSecItem, "Orcamento", { "ZB4" } )
 
-    //Campo + Alias
-    TRCell():New( oSecCab, "ZB4_COD",     "ZB4", , , , , , , , , , , , RGB( 242, 242, 242 ) )
-    TRCell():New( oSecCab, "ZB4_REV",     "ZB4" )
-    TRCell():New( oSecCab, "ZB4_TITULO",  "ZB4", , , , , , , , , , , , RGB( 242, 242, 242 ) )
-    TRCell():New( oSecCab, "ZB4_CLIENT",  "ZB4" )
-    TRCell():New( oSecCab, "ZB4_LOJA",    "ZB4", , , , , , , , , , , , RGB( 242, 242, 242 ) )
-    TRCell():New( oSecCab, "ZB4_DATA",    "ZB4" )
-    TRCell():New( oSecCab, "ZB4_TOTHR", , "Total Horas", , 10, , { || U_NumToHours(ZB4->ZB4_TTHRNM) }, "RIGHT", , , , , , RGB( 242, 242, 242 ), , .T. )
+	//Campo + Alias
+	TRCell():New( oSecCab, "ZB4_COD",     "ZB4", , , , , , , , , , , , RGB( 242, 242, 242 ) )
+	TRCell():New( oSecCab, "ZB4_REV",     "ZB4" )
+	TRCell():New( oSecCab, "ZB4_TITULO",  "ZB4", , , , , , , , , , , , RGB( 242, 242, 242 ) )
+	TRCell():New( oSecCab, "ZB4_CLIENT",  "ZB4" )
+	TRCell():New( oSecCab, "ZB4_LOJA",    "ZB4", , , , , , , , , , , , RGB( 242, 242, 242 ) )
+	TRCell():New( oSecCab, "ZB4_DATA",    "ZB4" )
+	TRCell():New( oSecCab, "ZB4_TOTHR", , "Total Horas", , 10, , { || U_NumToHours(ZB4->ZB4_TTHRNM) }, "RIGHT", , , , , , RGB( 242, 242, 242 ), , .T. )
 
-    TRCell():New( oSecItem, "ZB5_ITEM",     "ZB5", , , , , , , , , , , , RGB( 242, 242, 242 ) )
-    TRCell():New( oSecItem, "ZB5_DEMAND",   "ZB5" )
-    TRCell():New( oSecItem, "ZB5_DESDEF", , "Definicao", ,   10, , { || POSICIONE( 'ZB2', 1, XFILIAL( 'ZB2' ) + ZB5->ZB5_DEFIN, 'ZB2_DESC' ) }, , , , , , , RGB( 242, 242, 242 ) )
-    TRCell():New( oSecItem, "ZB5_DESARE", , "Area", ,        10, , { || POSICIONE( 'ZB1', 1, XFILIAL( 'ZB1' ) + ZB5->ZB5_AREA, 'ZB1_DESC' ) } )
-    TRCell():New( oSecItem, "ZB5_TOTHR", ,  "Tot Horas", ,   10, , { || U_NumToHours(ZB5->ZB5_TTHRNM) }, "RIGHT", , , , , , RGB( 242, 242, 242 ), , .T. )
+	TRCell():New( oSecItem, "ZB5_ITEM",     "ZB5", , , , , , , , , , , , RGB( 242, 242, 242 ) )
+	TRCell():New( oSecItem, "ZB5_DEMAND",   "ZB5" )
+	TRCell():New( oSecItem, "ZB5_DESDEF", , "Definicao", ,   10, , { || POSICIONE( 'ZB2', 1, XFILIAL( 'ZB2' ) + ZB5->ZB5_DEFIN, 'ZB2_DESC' ) }, , , , , , , RGB( 242, 242, 242 ) )
+	TRCell():New( oSecItem, "ZB5_DESARE", , "Area", ,        10, , { || POSICIONE( 'ZB1', 1, XFILIAL( 'ZB1' ) + ZB5->ZB5_AREA, 'ZB1_DESC' ) } )
+	TRCell():New( oSecItem, "ZB5_TOTHR", ,  "Tot Horas", ,   10, , { || U_NumToHours(ZB5->ZB5_TTHRNM) }, "RIGHT", , , , , , RGB( 242, 242, 242 ), , .T. )
 
-    TRCell():New( oSecAtiv, "ZB6_SUB",     "ZB6", , , 6, , , , , , , , , RGB( 242, 242, 242 ) )
-    TRCell():New( oSecAtiv, "ZB6_ATIV",    "ZB6" )
-    TRCell():New( oSecAtiv, "ZB6_HDOC", ,  "Doc.",  "",       10, , { || U_NumToHours(ZB6->ZB6_HDOCNM) }, "RIGHT", , , , , , RGB( 242, 242, 242 ) )
-    TRCell():New( oSecAtiv, "ZB6_HDEV", ,  "Dev.",  "",       10, , { || U_NumToHours(ZB6->ZB6_HDEVNM) }, "RIGHT" )
-    TRCell():New( oSecAtiv, "ZB6_HANA", ,  "Ana.",  "",       10, , { || U_NumToHours(ZB6->ZB6_HANANM) }, "RIGHT", , , , , , RGB( 242, 242, 242 ) )
-    TRCell():New( oSecAtiv, "ZB6_HVAL", ,  "Aval.", "",       10, , { || U_NumToHours(ZB6->ZB6_HVALNM) }, "RIGHT" )
-    TRCell():New( oSecAtiv, "ZB6_TOTHR", , "Tot Horas", ,     10, , { || U_NumToHours(ZB6->ZB6_TTHRNM) }, "RIGHT", , , , , , RGB( 242, 242, 242 ), , .T. )
+	TRCell():New( oSecAtiv, "ZB6_SUB",     "ZB6", , , 6, , , , , , , , , RGB( 242, 242, 242 ) )
+	TRCell():New( oSecAtiv, "ZB6_ATIV",    "ZB6" )
+	TRCell():New( oSecAtiv, "ZB6_HDOC", ,  "Doc.",  "",       10, , { || U_NumToHours(ZB6->ZB6_HDOCNM) }, "RIGHT", , , , , , RGB( 242, 242, 242 ) )
+	TRCell():New( oSecAtiv, "ZB6_HDEV", ,  "Dev.",  "",       10, , { || U_NumToHours(ZB6->ZB6_HDEVNM) }, "RIGHT" )
+	TRCell():New( oSecAtiv, "ZB6_HANA", ,  "Ana.",  "",       10, , { || U_NumToHours(ZB6->ZB6_HANANM) }, "RIGHT", , , , , , RGB( 242, 242, 242 ) )
+	TRCell():New( oSecAtiv, "ZB6_HVAL", ,  "Aval.", "",       10, , { || U_NumToHours(ZB6->ZB6_HVALNM) }, "RIGHT" )
+	TRCell():New( oSecAtiv, "ZB6_TOTHR", , "Tot Horas", ,     10, , { || U_NumToHours(ZB6->ZB6_TTHRNM) }, "RIGHT", , , , , , RGB( 242, 242, 242 ), , .T. )
 
-    oSecItem:SetLeftMargin( 3 )
-    oSecAtiv:SetLeftMargin( 6 ) 
+	oSecItem:SetLeftMargin( 3 )
+	oSecAtiv:SetLeftMargin( 6 )
 
 Return oReport
 
 Static Function ReportPrint( oReport )
 
-    Local oSecCab := oReport:Section( 1 )
-    Local oSecItem := oSecCab:Section( 1 )
-    Local oSecAtiv := oSecItem:Section( 1 )
-    Local aArea := GetArea()
-    Local aAreaZB5 := ZB5->( GetArea() )
-    Local aAreaZB6 := ZB6->( GetArea() )
-    Local cChaveZB5 := xFilial("ZB5") + ZB4->ZB4_COD + ZB4->ZB4_REV
-    Local cChaveZB6 as character
+	Local oSecCab := oReport:Section( 1 )
+	Local oSecItem := oSecCab:Section( 1 )
+	Local oSecAtiv := oSecItem:Section( 1 )
+	Local aArea := GetArea()
+	Local aAreaZB5 := ZB5->( GetArea() )
+	Local aAreaZB6 := ZB6->( GetArea() )
+	Local cChaveZB5 := xFilial("ZB5") + ZB4->ZB4_COD + ZB4->ZB4_REV
+	Local cChaveZB6 as character
 
-    oSecCab:Init()
-    oSecCab:PrintLine()
+	oSecCab:Init()
+	oSecCab:PrintLine()
 
-    ZB5->( DbSetOrder(1) )
-    ZB5->( DbSeek( cChaveZB5 ) )
+	ZB5->( DbSetOrder(1) )
+	ZB5->( DbSeek( cChaveZB5 ) )
 
-    // Percorre a ZB5
-    While ZB5->( !EoF() ) .And. ZB5->( ZB5_FILIAL + ZB5_COD + ZB5_REV ) == cChaveZB5
+	// Percorre a ZB5
+	While ZB5->( !EoF() ) .And. ZB5->( ZB5_FILIAL + ZB5_COD + ZB5_REV ) == cChaveZB5
 
-        oSecItem:Init()
-        oSecItem:PrintLine()
+		oSecItem:Init()
+		oSecItem:PrintLine()
 
-        cChaveZB6 := xFilial("ZB6") + ZB5->( ZB5_COD + ZB5_REV + ZB5_ITEM )
+		cChaveZB6 := xFilial("ZB6") + ZB5->( ZB5_COD + ZB5_REV + ZB5_ITEM )
 
-        ZB6->( DbSetOrder(1) )
-        ZB6->( DbSeek( cChaveZB6 ) )
+		ZB6->( DbSetOrder(1) )
+		ZB6->( DbSeek( cChaveZB6 ) )
 
-        oSecAtiv:Init()
+		oSecAtiv:Init()
 
-        // Percorre a ZB6
-        While ZB6->( !EoF() ) .And. ZB6->( ZB6_FILIAL + ZB6_COD + ZB6_REV + ZB6_ITEM ) == cChaveZB6
+		// Percorre a ZB6
+		While ZB6->( !EoF() ) .And. ZB6->( ZB6_FILIAL + ZB6_COD + ZB6_REV + ZB6_ITEM ) == cChaveZB6
 
-            oSecAtiv:PrintLine()
-            ZB6->( DbSkip() )
+			oSecAtiv:PrintLine()
+			ZB6->( DbSkip() )
 
-        EndDo
+		EndDo
 
-        oSecAtiv:Finish()
-        oSecItem:Finish()
-        ZB5->( DbSkip() )
+		oSecAtiv:Finish()
+		oSecItem:Finish()
+		ZB5->( DbSkip() )
 
-    EndDo
+	EndDo
 
-    oSecCab:Finish()
+	oSecCab:Finish()
 
-    RestArea( aAreaZB6 )
-    RestArea( aAreaZB5 )
-    RestArea( aArea )
+	RestArea( aAreaZB6 )
+	RestArea( aAreaZB5 )
+	RestArea( aArea )
 
 Return

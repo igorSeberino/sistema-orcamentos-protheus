@@ -16,16 +16,16 @@ using namespace custom.orc.utils
 /*/
 User Function ZORCA02()
 
-    Local oBrowse := FWMBrowse():New()
+	Local oBrowse := FWMBrowse():New()
 
-    oBrowse:SetAlias("ZB2")
-    oBrowse:SetDescription("Cadastro de Definições")
+	oBrowse:SetAlias("ZB2")
+	oBrowse:SetDescription("Cadastro de Definições")
 
-    // oBrowse:AddLegend(/* Campo = Valor */,/* Cor */,/* Legenda */)
-    oBrowse:AddLegend("ZB2_ATIVO == '" + ATIVO_SIM + "'", "GREEN", "Ativa")
-    oBrowse:AddLegend("ZB2_ATIVO == '" + ATIVO_NAO + "'", "RED", "Inativa")
+	// oBrowse:AddLegend(/* Campo = Valor */,/* Cor */,/* Legenda */)
+	oBrowse:AddLegend("ZB2_ATIVO == '" + ATIVO_SIM + "'", "GREEN", "Ativa")
+	oBrowse:AddLegend("ZB2_ATIVO == '" + ATIVO_NAO + "'", "RED", "Inativa")
 
-    oBrowse:Activate()
+	oBrowse:Activate()
 
 Return
 
@@ -42,16 +42,16 @@ Return
 /*/
 User Function ModelDef()
 
-    Local oModel := MPFormModel():New("ZORCA02M")
-    Local oStruZB2 := FWFormStruct(1, "ZB2")
+	Local oModel := MPFormModel():New("ZORCA02M")
+	Local oStruZB2 := FWFormStruct(1, "ZB2")
 
-    oModel:AddFields("ZB2MASTER", /*cOwner*/, oStruZB2)
-    oModel:SetDescription('Modelo de Definições')
+	oModel:AddFields("ZB2MASTER", /*cOwner*/, oStruZB2)
+	oModel:SetDescription('Modelo de Definições')
 
-    oModel:SetPrimaryKey({'ZB2_FILIAL', 'ZB2_COD'})
-    oModel:GetModel('ZB2MASTER'):SetDescription('Modelo de Definições')
+	oModel:SetPrimaryKey({'ZB2_FILIAL', 'ZB2_COD'})
+	oModel:GetModel('ZB2MASTER'):SetDescription('Modelo de Definições')
 
-    oModel:SetActivate({ |oModel| U_ModelActivate( @oModel, "ZB2" ) })
+	oModel:SetActivate({ |oModel| U_ModelActivate( @oModel, "ZB2" ) })
 
 Return oModel
 
@@ -68,15 +68,15 @@ Return oModel
 /*/
 User Function ViewDef()
 
-    Local oModel := FWLoadModel(NZORCA02 + ".ZORCA02")
-    Local oStruZB2 := FWFormStruct(2, "ZB2")
-    Local oView := FWFormView():New()
-    
-    oView:SetModel( oModel )
-    oView:AddField( 'VIEW_ZB2', oStruZB2, 'ZB2MASTER' )
+	Local oModel := FWLoadModel(NZORCA02 + ".ZORCA02")
+	Local oStruZB2 := FWFormStruct(2, "ZB2")
+	Local oView := FWFormView():New()
 
-    oView:CreateHorizontalBox( 'TELA', 100 )
-    oView:SetOwnerView( 'VIEW_ZB2', 'TELA' )
+	oView:SetModel( oModel )
+	oView:AddField( 'VIEW_ZB2', oStruZB2, 'ZB2MASTER' )
+
+	oView:CreateHorizontalBox( 'TELA', 100 )
+	oView:SetOwnerView( 'VIEW_ZB2', 'TELA' )
 
 Return oView
 
@@ -93,11 +93,11 @@ Return oView
 /*/
 User Function MenuDef()
 
-    Local aRotina := {}
-    //Define a chamada das actions do menu 
-    Local cActionString := FormatStr("VIEWDEF.%c.ZORCA02", NZORCA02)
+	Local aRotina := {}
+	//Define a chamada das actions do menu
+	Local cActionString := FormatStr("VIEWDEF.%c.ZORCA02", NZORCA02)
 
-    ADD OPTION aRotina Title 'Visualizar' Action cActionString OPERATION 2 ACCESS 0
+	ADD OPTION aRotina Title 'Visualizar' Action cActionString OPERATION 2 ACCESS 0
 	ADD OPTION aRotina Title 'Incluir' Action cActionString OPERATION 3 ACCESS 0
 	ADD OPTION aRotina Title 'Alterar' Action cActionString OPERATION 4 ACCESS 0
 	ADD OPTION aRotina Title 'Excluir' Action NZORCA02 + ".U_ZORCA02Exc()" OPERATION 5 ACCESS 0
@@ -120,35 +120,35 @@ Return aRotina
 /*/
 User Function ZORCA02Exc()
 
-    Local oModel := FWLoadModel(NZORCA02 + ".U_ZORCA02")
+	Local oModel := FWLoadModel(NZORCA02 + ".U_ZORCA02")
 
-    // Busca registros da ZB5 associados ao registro da ZB1
-    Local cQuery := U_QuerySet( "ZB5", {"ZB5_COD"}, { {"ZB5.ZB5_DEFIN = ", ZB2->ZB2_COD} })
-    Local cAliasQry := MPSysOpenQuery(cQuery)
+	// Busca registros da ZB5 associados ao registro da ZB1
+	Local cQuery := U_QuerySet( "ZB5", {"ZB5_COD"}, { {"ZB5.ZB5_DEFIN = ", ZB2->ZB2_COD} })
+	Local cAliasQry := MPSysOpenQuery(cQuery)
 
-    // Se tiver registro
-    If !(cAliasQry)->(EoF())
+	// Se tiver registro
+	If !(cAliasQry)->(EoF())
 
-        // Se estiver ativo
-        If ZB2->ZB2_ATIVO == ATIVO_SIM
+		// Se estiver ativo
+		If ZB2->ZB2_ATIVO == ATIVO_SIM
 
-            // Pergunta se deseja inativar
-            If MsgYesNo("Exclusão indisponível, definição já está sendo usada em orçamento. Deseja inativar?", "Definição em uso")
-                oModel:SetOperation(MODEL_OPERATION_UPDATE)
-                oModel:Activate()
-                oModel:SetValue("ZB2MASTER", "ZB2_ATIVO", ATIVO_NAO)
-                oModel:VldData()
-                oModel:CommitData()
-                oModel:DeActivate()
-                
-            EndIf
-        Else
-            Aviso("ATENÇÃO", "A definição já esta inativa, sua exclusão não pode ser efetuada pois está sendo usada em orçamento", {"Ok"})
-        EndIf
-    Else
-        FWExecView("Excluir", NZORCA02 + ".U_ZORCA02", MODEL_OPERATION_DELETE)
-    EndIf
+			// Pergunta se deseja inativar
+			If MsgYesNo("Exclusão indisponível, definição já está sendo usada em orçamento. Deseja inativar?", "Definição em uso")
+				oModel:SetOperation(MODEL_OPERATION_UPDATE)
+				oModel:Activate()
+				oModel:SetValue("ZB2MASTER", "ZB2_ATIVO", ATIVO_NAO)
+				oModel:VldData()
+				oModel:CommitData()
+				oModel:DeActivate()
 
-    (cAliasQry)->(dbCloseArea())
+			EndIf
+		Else
+			Aviso("ATENÇÃO", "A definição já esta inativa, sua exclusão não pode ser efetuada pois está sendo usada em orçamento", {"Ok"})
+		EndIf
+	Else
+		FWExecView("Excluir", NZORCA02 + ".U_ZORCA02", MODEL_OPERATION_DELETE)
+	EndIf
+
+	(cAliasQry)->(dbCloseArea())
 
 Return

@@ -16,16 +16,16 @@ using namespace custom.orc.utils
 /*/
 User Function ZORCA01()
 
-    Local oBrowse := FWMBrowse():New()
+	Local oBrowse := FWMBrowse():New()
 
-    oBrowse:SetAlias("ZB1")
-    oBrowse:SetDescription("Cadastro de Áreas")
+	oBrowse:SetAlias("ZB1")
+	oBrowse:SetDescription("Cadastro de Áreas")
 
-    // oBrowse:AddLegend(/* Campo = Valor */,/* Cor */,/* Legenda */)
-    oBrowse:AddLegend("ZB1_ATIVO == '" + ATIVO_SIM + "'", "GREEN", "Ativa")
-    oBrowse:AddLegend("ZB1_ATIVO == '" + ATIVO_NAO + "'", "RED", "Inativa")
+	// oBrowse:AddLegend(/* Campo = Valor */,/* Cor */,/* Legenda */)
+	oBrowse:AddLegend("ZB1_ATIVO == '" + ATIVO_SIM + "'", "GREEN", "Ativa")
+	oBrowse:AddLegend("ZB1_ATIVO == '" + ATIVO_NAO + "'", "RED", "Inativa")
 
-    oBrowse:Activate()
+	oBrowse:Activate()
 
 Return
 
@@ -42,16 +42,16 @@ Return
 /*/
 User Function ModelDef()
 
-    Local oModel := MPFormModel():New("ZORCA01M")
-    Local oStruZB1 := FWFormStruct(1, "ZB1")
+	Local oModel := MPFormModel():New("ZORCA01M")
+	Local oStruZB1 := FWFormStruct(1, "ZB1")
 
-    oModel:AddFields("ZB1MASTER", /*cOwner*/, oStruZB1)
-    oModel:SetDescription('Modelo de Áreas')
+	oModel:AddFields("ZB1MASTER", /*cOwner*/, oStruZB1)
+	oModel:SetDescription('Modelo de Áreas')
 
-    oModel:SetPrimaryKey({'ZB1_FILIAL', 'ZB1_COD'})
-    oModel:GetModel('ZB1MASTER'):SetDescription('Modelo de Áreas')
+	oModel:SetPrimaryKey({'ZB1_FILIAL', 'ZB1_COD'})
+	oModel:GetModel('ZB1MASTER'):SetDescription('Modelo de Áreas')
 
-    oModel:SetActivate({ |oModel| U_ModelActivate( @oModel, "ZB1" ) })
+	oModel:SetActivate({ |oModel| U_ModelActivate( @oModel, "ZB1" ) })
 
 Return oModel
 
@@ -68,15 +68,15 @@ Return oModel
 /*/
 User Function ViewDef()
 
-    Local oModel := FWLoadModel(NZORCA01 + ".ZORCA01")
-    Local oStruZB1 := FWFormStruct(2, "ZB1")
-    Local oView := FWFormView():New()
-    
-    oView:SetModel( oModel )
-    oView:AddField( 'VIEW_ZB1', oStruZB1, 'ZB1MASTER' )
+	Local oModel := FWLoadModel(NZORCA01 + ".ZORCA01")
+	Local oStruZB1 := FWFormStruct(2, "ZB1")
+	Local oView := FWFormView():New()
 
-    oView:CreateHorizontalBox( 'TELA', 100 )
-    oView:SetOwnerView( 'VIEW_ZB1', 'TELA' )
+	oView:SetModel( oModel )
+	oView:AddField( 'VIEW_ZB1', oStruZB1, 'ZB1MASTER' )
+
+	oView:CreateHorizontalBox( 'TELA', 100 )
+	oView:SetOwnerView( 'VIEW_ZB1', 'TELA' )
 
 Return oView
 
@@ -93,11 +93,11 @@ Return oView
 /*/
 User Function MenuDef()
 
-    Local aRotina := {}
-    //Define a chamada das actions do menu 
-    Local cActionString := FormatStr("VIEWDEF.%c.ZORCA01", NZORCA01)
+	Local aRotina := {}
+	//Define a chamada das actions do menu
+	Local cActionString := FormatStr("VIEWDEF.%c.ZORCA01", NZORCA01)
 
-    ADD OPTION aRotina Title 'Visualizar' Action cActionString OPERATION 2 ACCESS 0
+	ADD OPTION aRotina Title 'Visualizar' Action cActionString OPERATION 2 ACCESS 0
 	ADD OPTION aRotina Title 'Incluir' Action cActionString OPERATION 3 ACCESS 0
 	ADD OPTION aRotina Title 'Alterar' Action cActionString OPERATION 4 ACCESS 0
 	ADD OPTION aRotina Title 'Excluir' Action NZORCA01 + ".U_ZORCA01Exc()" OPERATION 5 ACCESS 0
@@ -120,35 +120,35 @@ Return aRotina
 /*/
 User Function ZORCA01Exc()
 
-    Local oModel := FWLoadModel(NZORCA01 + ".U_ZORCA01")
+	Local oModel := FWLoadModel(NZORCA01 + ".U_ZORCA01")
 
-    // Busca registros da ZB5 associados ao registro da ZB1
-    Local cQuery := U_QuerySet( "ZB5", {"ZB5_COD"}, { {"ZB5.ZB5_AREA = ", ZB1->ZB1_COD} })
-    Local cAliasQry := MPSysOpenQuery(cQuery)
+	// Busca registros da ZB5 associados ao registro da ZB1
+	Local cQuery := U_QuerySet( "ZB5", {"ZB5_COD"}, { {"ZB5.ZB5_AREA = ", ZB1->ZB1_COD} })
+	Local cAliasQry := MPSysOpenQuery(cQuery)
 
-    // Se tiver registro
-    If !(cAliasQry)->(EoF())
+	// Se tiver registro
+	If !(cAliasQry)->(EoF())
 
-        // Se estiver ativo
-        If ZB1->ZB1_ATIVO == ATIVO_SIM
+		// Se estiver ativo
+		If ZB1->ZB1_ATIVO == ATIVO_SIM
 
-            // Pergunta se deseja inativar
-            If MsgYesNo("Exclusão indisponível, área já está sendo usada em orçamento. Deseja inativar?", "Área em uso")
-                oModel:SetOperation(MODEL_OPERATION_UPDATE)
-                oModel:Activate()
-                oModel:SetValue("ZB1MASTER", "ZB1_ATIVO", ATIVO_NAO)
-                oModel:VldData()
-                oModel:CommitData()
-                oModel:DeActivate()
+			// Pergunta se deseja inativar
+			If MsgYesNo("Exclusão indisponível, área já está sendo usada em orçamento. Deseja inativar?", "Área em uso")
+				oModel:SetOperation(MODEL_OPERATION_UPDATE)
+				oModel:Activate()
+				oModel:SetValue("ZB1MASTER", "ZB1_ATIVO", ATIVO_NAO)
+				oModel:VldData()
+				oModel:CommitData()
+				oModel:DeActivate()
 
-            EndIf
-        Else
-            Aviso("ATENÇÃO", "A área já esta inativa, sua exclusão não pode ser efetuada pois está sendo usada em orçamento", {"Ok"})
-        EndIf
-    Else
-        FWExecView("Excluir", NZORCA01 + ".U_ZORCA01", MODEL_OPERATION_DELETE)
-    EndIf
+			EndIf
+		Else
+			Aviso("ATENÇÃO", "A área já esta inativa, sua exclusão não pode ser efetuada pois está sendo usada em orçamento", {"Ok"})
+		EndIf
+	Else
+		FWExecView("Excluir", NZORCA01 + ".U_ZORCA01", MODEL_OPERATION_DELETE)
+	EndIf
 
-    (cAliasQry)->(dbCloseArea())
+	(cAliasQry)->(dbCloseArea())
 
-Return            
+Return

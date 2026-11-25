@@ -16,88 +16,88 @@ using namespace custom.orc.utils
 /*/
 User Function ZORCA07( cDef )
 
-    Local oModal := FWDialogModal():New()
-    Local oPanel := oModal:GetPanelMain()
-    Local oGet
+	Local oModal := FWDialogModal():New()
+	Local oPanel := oModal:GetPanelMain()
+	Local oGet
 
-    Local oBrowseRes as object
-    Local oBrowseDet as object
+	Local oBrowseRes as object
+	Local oBrowseDet as object
 
-    Local aButtons := {;
-     { , "Visualizar Orçamento", { || Visualizar( aDetalhe[oBrowseDet:At(), 1] ) }, , 1, .T., .F. }, ; 
-     { , "Exportar Excel", { || }, , 2, .T., .F. } ;
-     }
+	Local aButtons := {;
+		{ , "Visualizar Orçamento", { || Visualizar( aDetalhe[oBrowseDet:At(), 1] ) }, , 1, .T., .F. }, ;
+		{ , "Exportar Excel", { || }, , 2, .T., .F. } ;
+		}
 
-    Local aDetalhe := {}
-    Local aResumo := {}
-    Local aDetTodos := {}
+	Local aDetalhe := {}
+	Local aResumo := {}
+	Local aDetTodos := {}
 
-    Local cArea    := Space( TamSX3("ZB5_AREA")[1] )
-    Local cCli     := Space( TamSX3("ZB4_CLIENT")[1] )
-    Local dDateIni := CtoD("")
-    Local dDateFin := CtoD("")
+	Local cArea    := Space( TamSX3("ZB5_AREA")[1] )
+	Local cCli     := Space( TamSX3("ZB4_CLIENT")[1] )
+	Local dDateIni := CtoD("")
+	Local dDateFin := CtoD("")
 
-    Local oFontTitle := TFont():New("Arial", , -20, , .T.)
-    Local oFontSubt := TFont():New("Arial", , -16, , .T.)
-    Local oFont := TFont():New("Arial", , -12)
+	Local oFontTitle := TFont():New("Arial", , -20, , .T.)
+	Local oFontSubt := TFont():New("Arial", , -16, , .T.)
+	Local oFont := TFont():New("Arial", , -12)
 
-    If Empty(cDef)
-        cDef := Space( TamSX3("ZB5_DEFIN")[1] )
-    EndIf
+	If Empty(cDef)
+		cDef := Space( TamSX3("ZB5_DEFIN")[1] )
+	EndIf
 
-    oModal:SetEscClose(.T.)
-    oModal:SetSize(270, 550) // altura, largura
-    oModal:CreateDialog()
+	oModal:SetEscClose(.T.)
+	oModal:SetSize(270, 550) // altura, largura
+	oModal:CreateDialog()
 
-    // Título e Linha
-    TSay():New( 010, 010, { || "Consulta Histórica" }, oPanel, , oFontTitle, , , , .T., , , 100, 010 ) //Título
-    TPanel():New( 025, 010, , oPanel, , , , , CLR_GRAY, 530, 1 )
+	// Título e Linha
+	TSay():New( 010, 010, { || "Consulta Histórica" }, oPanel, , oFontTitle, , , , .T., , , 100, 010 ) //Título
+	TPanel():New( 025, 010, , oPanel, , , , , CLR_GRAY, 530, 1 )
 
-    // Campo Definição
-    TSay():New( 031, 010, { || "Definição" }, oPanel, , oFontSubt, , , , .T., , , 040, 010 )
-    oGet := TGet():New( 030, 050, { |u| If( PCount() > 0, cDef := u, cDef ) }, oPanel, 025, 010, "@!", , , , oFont, , , .T. )
-    oGet:cF3 := "ZB2"
-    oGet:bValid := { ||( Empty(cDef) .Or. U_VldDefin( cDef ) ) .And. Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ) }
+	// Campo Definição
+	TSay():New( 031, 010, { || "Definição" }, oPanel, , oFontSubt, , , , .T., , , 040, 010 )
+	oGet := TGet():New( 030, 050, { |u| If( PCount() > 0, cDef := u, cDef ) }, oPanel, 025, 010, "@!", , , , oFont, , , .T. )
+	oGet:cF3 := "ZB2"
+	oGet:bValid := { ||( Empty(cDef) .Or. U_VldDefin( cDef ) ) .And. Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ) }
 
-    // Campo Área
-    TSay():New( 031, 085, { || "Área" }, oPanel, , oFontSubt, , , , .T., , , 020, 010 )
-    oGet := TGet():New( 030, 105, { |u| If( PCount() > 0, cArea := u, cArea ) }, oPanel, 025, 010, "@!", , , , oFont, , , .T. )
-    oGet:cF3 := "ZB1"
-    oGet:bValid := { || ( Empty(cArea) .Or. U_VldArea( cArea ) ) .And. Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ) }
+	// Campo Área
+	TSay():New( 031, 085, { || "Área" }, oPanel, , oFontSubt, , , , .T., , , 020, 010 )
+	oGet := TGet():New( 030, 105, { |u| If( PCount() > 0, cArea := u, cArea ) }, oPanel, 025, 010, "@!", , , , oFont, , , .T. )
+	oGet:cF3 := "ZB1"
+	oGet:bValid := { || ( Empty(cArea) .Or. U_VldArea( cArea ) ) .And. Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ) }
 
-    // Campo Cliente
-    TSay():New( 031, 140, { || "Cliente" }, oPanel, , oFontSubt, , , , .T., , , 030, 010 )
-    oGet := TGet():New( 030, 170, { |u| If( PCount() > 0, cCli := u, cCli ) }, oPanel, 025, 010, "@!", , , , oFont, , , .T. )
-    oGet:cF3 := "SA1"
-    oGet:bValid := { || ( Empty(cCli) .Or. ExistCpo( "SA1", cCli ) ) .And. Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ) }
+	// Campo Cliente
+	TSay():New( 031, 140, { || "Cliente" }, oPanel, , oFontSubt, , , , .T., , , 030, 010 )
+	oGet := TGet():New( 030, 170, { |u| If( PCount() > 0, cCli := u, cCli ) }, oPanel, 025, 010, "@!", , , , oFont, , , .T. )
+	oGet:cF3 := "SA1"
+	oGet:bValid := { || ( Empty(cCli) .Or. ExistCpo( "SA1", cCli ) ) .And. Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ) }
 
-    // Campo Data Init
-    TSay():New( 031, 210, { || "Período de" }, oPanel, , oFontSubt, , , , .T., , , 050, 010 )
-    oGet := TGet():New( 030, 255, { |u| If( PCount() > 0, dDateIni := u, dDateIni ) }, oPanel, 050, 010, , , , , oFont, , , .T., , , , , , , , , , , , , , .T. )
-    oGet:bValid := { || IIf(;
-        Empty(dDateIni) .Or. Empty(dDateFin) .Or. (dDateIni < dDateFin), ( Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ), .T. ),;
-        (Help( , , "HELP", , "Data inicial maior que a final", 1, 0 ), .F.) ) }
+	// Campo Data Init
+	TSay():New( 031, 210, { || "Período de" }, oPanel, , oFontSubt, , , , .T., , , 050, 010 )
+	oGet := TGet():New( 030, 255, { |u| If( PCount() > 0, dDateIni := u, dDateIni ) }, oPanel, 050, 010, , , , , oFont, , , .T., , , , , , , , , , , , , , .T. )
+	oGet:bValid := { || IIf(;
+		Empty(dDateIni) .Or. Empty(dDateFin) .Or. (dDateIni < dDateFin), ( Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ), .T. ),;
+		(Help( , , "HELP", , "Data inicial maior que a final", 1, 0 ), .F.) ) }
 
-    // Campo Data Fin
-    TSay():New( 031, 305, { || "até" }, oPanel, , oFontSubt, , , , .T., , , 020, 010 )
-    oGet := TGet():New( 030, 320, { |u| If( PCount() > 0, dDateFin := u, dDateFin ) }, oPanel, 050, 010, , , , , oFont, , , .T., , , , , , , , , , , , , , .T. )
-    oGet:bValid := { || IIf(;
-        Empty(dDateFin) .Or. Empty(dDateIni) .Or. (dDateIni < dDateFin), ( Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ), .T. ),;
-        (Help( , , "HELP", , "Data inicial maior que a final", 1, 0 ), .F.) ) }
+	// Campo Data Fin
+	TSay():New( 031, 305, { || "até" }, oPanel, , oFontSubt, , , , .T., , , 020, 010 )
+	oGet := TGet():New( 030, 320, { |u| If( PCount() > 0, dDateFin := u, dDateFin ) }, oPanel, 050, 010, , , , , oFont, , , .T., , , , , , , , , , , , , , .T. )
+	oGet:bValid := { || IIf(;
+		Empty(dDateFin) .Or. Empty(dDateIni) .Or. (dDateIni < dDateFin), ( Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ), .T. ),;
+		(Help( , , "HELP", , "Data inicial maior que a final", 1, 0 ), .F.) ) }
 
-    // Botões da barra inferior
-    oModal:addButtons( aButtons ) 
-    oModal:AddCloseButton( Nil, "Fechar" )
+	// Botões da barra inferior
+	oModal:addButtons( aButtons )
+	oModal:AddCloseButton( Nil, "Fechar" )
 
-    TSay():New( 128, 010, { || "Detalhe" }, oPanel, , oFontSubt, , , , .T., , , 100, 012 )
-    oBrowseDet := Detalhe( oPanel, aDetalhe )
+	TSay():New( 128, 010, { || "Detalhe" }, oPanel, , oFontSubt, , , , .T., , , 100, 012 )
+	oBrowseDet := Detalhe( oPanel, aDetalhe )
 
-    TSay():New( 050, 010, { || "Resumo" }, oPanel, , oFontSubt, , , , .T., , , 100, 012 )
-    oBrowseRes := Resumo( oPanel, aResumo, { || FiltraDetalhe( oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ) } )
+	TSay():New( 050, 010, { || "Resumo" }, oPanel, , oFontSubt, , , , .T., , , 100, 012 )
+	oBrowseRes := Resumo( oPanel, aResumo, { || FiltraDetalhe( oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ) } )
 
-    Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos )
+	Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos )
 
-    oModal:Activate()
+	oModal:Activate()
 
 Return
 
@@ -112,25 +112,25 @@ Return
 /*/
 Static Function Resumo( oPanel, aResumo, bChange )
 
-    Local oPanelRes := TPanel():New( 062, 010, , oPanel, , , , , , 530, 060 )
-    Local oBrowseRes := FWBrowse():New( oPanelRes )
+	Local oPanelRes := TPanel():New( 062, 010, , oPanel, , , , , , 530, 060 )
+	Local oBrowseRes := FWBrowse():New( oPanelRes )
 
-    oBrowseRes:SetDataArray()
-    oBrowseRes:SetArray( aResumo )
-    oBrowseRes:DisableConfig()
-    oBrowseRes:DisableReport()
-    oBrowseRes:SetColumns( { ;
-        NovaCol( "Definição", { || aResumo[oBrowseRes:At(), 1] }, "C", 30, 0, "@!" ), ;
-        NovaCol( "Itens",     { || aResumo[oBrowseRes:At(), 2] }, "N", 5,  0, "@E 99999" ), ;
-        NovaCol( "Média",     { || aResumo[oBrowseRes:At(), 3] }, "C", 10, 2, "", CONTROL_ALIGN_RIGHT ), ;
-        NovaCol( "Mín",       { || aResumo[oBrowseRes:At(), 4] }, "C", 10, 2, "", CONTROL_ALIGN_RIGHT ), ;
-        NovaCol( "Máx",       { || aResumo[oBrowseRes:At(), 5] }, "C", 10, 2, "", CONTROL_ALIGN_RIGHT ), ;
-        NovaCol( "Doc %",     { || aResumo[oBrowseRes:At(), 6] }, "N", 6,  2, "@E 999.99", CONTROL_ALIGN_RIGHT ), ;
-        NovaCol( "Dev %",     { || aResumo[oBrowseRes:At(), 7] }, "N", 6,  2, "@E 999.99", CONTROL_ALIGN_RIGHT ), ;
-        NovaCol( "Anál %",    { || aResumo[oBrowseRes:At(), 8] }, "N", 6,  2, "@E 999.99", CONTROL_ALIGN_RIGHT ), ;
-        NovaCol( "Vald %",    { || aResumo[oBrowseRes:At(), 9] }, "N", 6,  2, "@E 999.99", CONTROL_ALIGN_RIGHT ) } )
-    oBrowseRes:SetChange( bChange )
-    oBrowseRes:Activate()
+	oBrowseRes:SetDataArray()
+	oBrowseRes:SetArray( aResumo )
+	oBrowseRes:DisableConfig()
+	oBrowseRes:DisableReport()
+	oBrowseRes:SetColumns( { ;
+		NovaCol( "Definição", { || aResumo[oBrowseRes:At(), 1] }, "C", 30, 0, "@!" ), ;
+		NovaCol( "Itens",     { || aResumo[oBrowseRes:At(), 2] }, "N", 5,  0, "@E 99999" ), ;
+		NovaCol( "Média",     { || aResumo[oBrowseRes:At(), 3] }, "C", 10, 2, "", CONTROL_ALIGN_RIGHT ), ;
+		NovaCol( "Mín",       { || aResumo[oBrowseRes:At(), 4] }, "C", 10, 2, "", CONTROL_ALIGN_RIGHT ), ;
+		NovaCol( "Máx",       { || aResumo[oBrowseRes:At(), 5] }, "C", 10, 2, "", CONTROL_ALIGN_RIGHT ), ;
+		NovaCol( "Doc %",     { || aResumo[oBrowseRes:At(), 6] }, "N", 6,  2, "@E 999.99", CONTROL_ALIGN_RIGHT ), ;
+		NovaCol( "Dev %",     { || aResumo[oBrowseRes:At(), 7] }, "N", 6,  2, "@E 999.99", CONTROL_ALIGN_RIGHT ), ;
+		NovaCol( "Anál %",    { || aResumo[oBrowseRes:At(), 8] }, "N", 6,  2, "@E 999.99", CONTROL_ALIGN_RIGHT ), ;
+		NovaCol( "Vald %",    { || aResumo[oBrowseRes:At(), 9] }, "N", 6,  2, "@E 999.99", CONTROL_ALIGN_RIGHT ) } )
+	oBrowseRes:SetChange( bChange )
+	oBrowseRes:Activate()
 
 Return oBrowseRes
 
@@ -145,20 +145,20 @@ Return oBrowseRes
 /*/
 Static Function Detalhe( oPanel, aDetalhe )
 
-    Local oPanelDet := TPanel():New( 140, 010, , oPanel, , , , , , 530, 100 )
-    Local oBrowseDet := FWBrowse():New( oPanelDet )
-    
-    oBrowseDet:SetDataArray()
-    oBrowseDet:SetArray( aDetalhe )
-    oBrowseDet:DisableConfig()
-    oBrowseDet:DisableReport()
-    oBrowseDet:SetColumns( { ;
-        NovaCol( "Orçamento", { || aDetalhe[oBrowseDet:At(), 1] }, "C", 10, 0, "@!" ), ;
-        NovaCol( "Cliente",   { || aDetalhe[oBrowseDet:At(), 2] }, "C", 30, 0, "@!" ), ;
-        NovaCol( "Ticket",    { || aDetalhe[oBrowseDet:At(), 3] }, "C", 15, 0, "@!" ), ;
-        NovaCol( "Demanda",   { || aDetalhe[oBrowseDet:At(), 4] }, "C", 50, 0, "" ), ;
-        NovaCol( "Horas",     { || aDetalhe[oBrowseDet:At(), 5] }, "C", 10, 2, "" ) } )
-    oBrowseDet:Activate()
+	Local oPanelDet := TPanel():New( 140, 010, , oPanel, , , , , , 530, 100 )
+	Local oBrowseDet := FWBrowse():New( oPanelDet )
+
+	oBrowseDet:SetDataArray()
+	oBrowseDet:SetArray( aDetalhe )
+	oBrowseDet:DisableConfig()
+	oBrowseDet:DisableReport()
+	oBrowseDet:SetColumns( { ;
+		NovaCol( "Orçamento", { || aDetalhe[oBrowseDet:At(), 1] }, "C", 10, 0, "@!" ), ;
+		NovaCol( "Cliente",   { || aDetalhe[oBrowseDet:At(), 2] }, "C", 30, 0, "@!" ), ;
+		NovaCol( "Ticket",    { || aDetalhe[oBrowseDet:At(), 3] }, "C", 15, 0, "@!" ), ;
+		NovaCol( "Demanda",   { || aDetalhe[oBrowseDet:At(), 4] }, "C", 50, 0, "" ), ;
+		NovaCol( "Horas",     { || aDetalhe[oBrowseDet:At(), 5] }, "C", 10, 2, "" ) } )
+	oBrowseDet:Activate()
 
 Return oBrowseDet
 
@@ -173,18 +173,18 @@ Return oBrowseDet
 /*/
 Static Function NovaCol( cTitulo, bDado, cTipo, nTam, nDec, cPict, nAlign )
 
-    Local oCol := FWBrwColumn():New()
+	Local oCol := FWBrwColumn():New()
 
-    oCol:SetTitle( cTitulo )
-    oCol:SetData( bDado )
-    oCol:SetType( cTipo )
-    oCol:SetSize( nTam )
-    oCol:SetDecimal( nDec )
-    oCol:SetPicture( cPict )
+	oCol:SetTitle( cTitulo )
+	oCol:SetData( bDado )
+	oCol:SetType( cTipo )
+	oCol:SetSize( nTam )
+	oCol:SetDecimal( nDec )
+	oCol:SetPicture( cPict )
 
-    If nAlign != Nil
-        oCol:SetAlign( nAlign )
-    EndIf
+	If nAlign != Nil
+		oCol:SetAlign( nAlign )
+	EndIf
 
 
 Return oCol
@@ -200,202 +200,202 @@ Return oCol
 /*/
 Static Function Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos )
 
-    Local aArea   := GetArea()
-    Local aParams := {}
-    Local cFiltro as character
-    Local cAlias  as character
+	Local aArea   := GetArea()
+	Local aParams := {}
+	Local cFiltro as character
+	Local cAlias  as character
 
-    cFiltro := Filtros( cDef, cArea, cCli, dDateIni, dDateFin, aParams )
+	cFiltro := Filtros( cDef, cArea, cCli, dDateIni, dDateFin, aParams )
 
-    //Resumo
-    aSize( aResumo, 0 )
-    cAlias := MPSysOpenQuery( QryResumo( cFiltro, aParams ) )
+	//Resumo
+	aSize( aResumo, 0 )
+	cAlias := MPSysOpenQuery( QryResumo( cFiltro, aParams ) )
 
-    While !(cAlias)->(EoF())
-        aAdd( aResumo, { (cAlias)->ZB2_COD + " " + (cAlias)->ZB2_DESC, ;
-                         (cAlias)->ITENS, U_NumToHours((cAlias)->MEDIA), ;
-                         U_NumToHours((cAlias)->MINIMO), U_NumToHours((cAlias)->MAXIMO), ;
-                         (cAlias)->PDOC, (cAlias)->PDEV, (cAlias)->PANA, (cAlias)->PVAL, ;
-                         (cAlias)->ZB2_COD } )                         
-        (cAlias)->( DbSkip() )
-    EndDo
-    (cAlias)->(DbCloseArea())
+	While !(cAlias)->(EoF())
+		aAdd( aResumo, { (cAlias)->ZB2_COD + " " + (cAlias)->ZB2_DESC, ;
+			(cAlias)->ITENS, U_NumToHours((cAlias)->MEDIA), ;
+			U_NumToHours((cAlias)->MINIMO), U_NumToHours((cAlias)->MAXIMO), ;
+			(cAlias)->PDOC, (cAlias)->PDEV, (cAlias)->PANA, (cAlias)->PVAL, ;
+			(cAlias)->ZB2_COD } )
+		(cAlias)->( DbSkip() )
+	EndDo
+	(cAlias)->(DbCloseArea())
 
-    // Detalhe
-    aSize( aDetTodos, 0 )
-    cAlias := MPSysOpenQuery( QryDetalhe( cFiltro, aParams ) )
+	// Detalhe
+	aSize( aDetTodos, 0 )
+	cAlias := MPSysOpenQuery( QryDetalhe( cFiltro, aParams ) )
 
-    While !(cAlias)->(EoF())
-        aAdd( aDetTodos, { (cAlias)->ZB4_COD + "/" + (cAlias)->ZB4_REV, ;
-                          (cAlias)->ZB4_CLIENT + "/" + (cAlias)->ZB4_LOJA, ;
-                          (cAlias)->ZB4_TICKET, ;
-                          (cAlias)->ZB5_DEMAND, ;
-                          U_NumToHours((cAlias)->ZB5_TTHRNM), ;
-                          (cAlias)->ZB5_DEFIN } )
-        (cAlias)->(DbSkip())
-    EndDo
-    (cAlias)->(DbCloseArea())
+	While !(cAlias)->(EoF())
+		aAdd( aDetTodos, { (cAlias)->ZB4_COD + "/" + (cAlias)->ZB4_REV, ;
+			(cAlias)->ZB4_CLIENT + "/" + (cAlias)->ZB4_LOJA, ;
+			(cAlias)->ZB4_TICKET, ;
+			(cAlias)->ZB5_DEMAND, ;
+			U_NumToHours((cAlias)->ZB5_TTHRNM), ;
+			(cAlias)->ZB5_DEFIN } )
+		(cAlias)->(DbSkip())
+	EndDo
+	(cAlias)->(DbCloseArea())
 
-    oBrowseRes:SetArray( aResumo )
-    oBrowseRes:Refresh( .T. )
+	oBrowseRes:SetArray( aResumo )
+	oBrowseRes:Refresh( .T. )
 
-    FiltraDetalhe( oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos )
+	FiltraDetalhe( oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos )
 
-    RestArea( aArea )
+	RestArea( aArea )
 
 Return .T.
 
 Static Function Filtros( cDef, cArea, cCli, dDateIni, dDateFin, aParams )
 
-    Local cFiltro as character
+	Local cFiltro as character
 
-    cFiltro := " FROM " + RetSQLName("ZB5") + " ZB5 "
+	cFiltro := " FROM " + RetSQLName("ZB5") + " ZB5 "
 
-    cFiltro += " INNER JOIN " + RetSQLName("ZB2") + " ZB2 "
-    cFiltro += "    ON ZB2.ZB2_FILIAL = ? "
-    cFiltro += "   AND ZB2.ZB2_COD    = ZB5.ZB5_DEFIN "
-    cFiltro += "   AND ZB2.D_E_L_E_T_ = ' ' "
+	cFiltro += " INNER JOIN " + RetSQLName("ZB2") + " ZB2 "
+	cFiltro += "    ON ZB2.ZB2_FILIAL = ? "
+	cFiltro += "   AND ZB2.ZB2_COD    = ZB5.ZB5_DEFIN "
+	cFiltro += "   AND ZB2.D_E_L_E_T_ = ' ' "
 
-    cFiltro += " INNER JOIN " + RetSQLName("ZB4") + " ZB4 "
-    cFiltro += "    ON ZB4.ZB4_FILIAL = ZB5.ZB5_FILIAL "
-    cFiltro += "   AND ZB4.ZB4_COD    = ZB5.ZB5_COD "
-    cFiltro += "   AND ZB4.ZB4_REV    = ZB5.ZB5_REV "
-    cFiltro += "   AND ZB4.D_E_L_E_T_ = ' ' "
+	cFiltro += " INNER JOIN " + RetSQLName("ZB4") + " ZB4 "
+	cFiltro += "    ON ZB4.ZB4_FILIAL = ZB5.ZB5_FILIAL "
+	cFiltro += "   AND ZB4.ZB4_COD    = ZB5.ZB5_COD "
+	cFiltro += "   AND ZB4.ZB4_REV    = ZB5.ZB5_REV "
+	cFiltro += "   AND ZB4.D_E_L_E_T_ = ' ' "
 
-    cFiltro += " INNER JOIN ( SELECT ZB6_FILIAL, ZB6_COD, ZB6_REV, ZB6_ITEM, "
-    cFiltro += "                     SUM(ZB6_HDOCNM) HDOC, SUM(ZB6_HDEVNM) HDEV, "
-    cFiltro += "                     SUM(ZB6_HANANM) HANA, SUM(ZB6_HVALNM) HVAL "
-    cFiltro += "                FROM " + RetSQLName("ZB6")
-    cFiltro += "               WHERE D_E_L_E_T_ = ' ' "
-    cFiltro += "               GROUP BY ZB6_FILIAL, ZB6_COD, ZB6_REV, ZB6_ITEM ) ZB6T "
-    cFiltro += "    ON ZB6T.ZB6_FILIAL = ZB5.ZB5_FILIAL "
-    cFiltro += "   AND ZB6T.ZB6_COD    = ZB5.ZB5_COD "
-    cFiltro += "   AND ZB6T.ZB6_REV    = ZB5.ZB5_REV "
-    cFiltro += "   AND ZB6T.ZB6_ITEM   = ZB5.ZB5_ITEM "
+	cFiltro += " INNER JOIN ( SELECT ZB6_FILIAL, ZB6_COD, ZB6_REV, ZB6_ITEM, "
+	cFiltro += "                     SUM(ZB6_HDOCNM) HDOC, SUM(ZB6_HDEVNM) HDEV, "
+	cFiltro += "                     SUM(ZB6_HANANM) HANA, SUM(ZB6_HVALNM) HVAL "
+	cFiltro += "                FROM " + RetSQLName("ZB6")
+	cFiltro += "               WHERE D_E_L_E_T_ = ' ' "
+	cFiltro += "               GROUP BY ZB6_FILIAL, ZB6_COD, ZB6_REV, ZB6_ITEM ) ZB6T "
+	cFiltro += "    ON ZB6T.ZB6_FILIAL = ZB5.ZB5_FILIAL "
+	cFiltro += "   AND ZB6T.ZB6_COD    = ZB5.ZB5_COD "
+	cFiltro += "   AND ZB6T.ZB6_REV    = ZB5.ZB5_REV "
+	cFiltro += "   AND ZB6T.ZB6_ITEM   = ZB5.ZB5_ITEM "
 
-    cFiltro += " WHERE ZB5.D_E_L_E_T_ = ' ' "
-    cFiltro += "   AND ZB5.ZB5_FILIAL = ? "
+	cFiltro += " WHERE ZB5.D_E_L_E_T_ = ' ' "
+	cFiltro += "   AND ZB5.ZB5_FILIAL = ? "
 
-    aAdd( aParams, xFilial("ZB2") )
-    aAdd( aParams, xFilial("ZB5") )
+	aAdd( aParams, xFilial("ZB2") )
+	aAdd( aParams, xFilial("ZB5") )
 
-    If !Empty( cDef )
-        cFiltro += " AND ZB5.ZB5_DEFIN = ? "
-        aAdd( aParams, cDef )
-    EndIf
+	If !Empty( cDef )
+		cFiltro += " AND ZB5.ZB5_DEFIN = ? "
+		aAdd( aParams, cDef )
+	EndIf
 
-    If !Empty( cArea )
-        cFiltro += " AND ZB5.ZB5_AREA = ? "
-        aAdd( aParams, cArea )
-    EndIf
+	If !Empty( cArea )
+		cFiltro += " AND ZB5.ZB5_AREA = ? "
+		aAdd( aParams, cArea )
+	EndIf
 
-    If !Empty( cCli )
-        cFiltro += " AND ZB4.ZB4_CLIENT = ? "
-        aAdd( aParams, cCli )
-    EndIf
+	If !Empty( cCli )
+		cFiltro += " AND ZB4.ZB4_CLIENT = ? "
+		aAdd( aParams, cCli )
+	EndIf
 
-    If !Empty( dDateIni )
-        cFiltro += " AND ZB4.ZB4_DATA >= ? "
-        aAdd( aParams, dDateIni )
-    EndIf
+	If !Empty( dDateIni )
+		cFiltro += " AND ZB4.ZB4_DATA >= ? "
+		aAdd( aParams, dDateIni )
+	EndIf
 
-    If !Empty( dDateFin )
-        cFiltro += " AND ZB4.ZB4_DATA <= ? "
-        aAdd( aParams, dDateFin )
-    EndIf
+	If !Empty( dDateFin )
+		cFiltro += " AND ZB4.ZB4_DATA <= ? "
+		aAdd( aParams, dDateFin )
+	EndIf
 
 Return cFiltro
 
 Static Function QryDetalhe( cFiltro, aParams )
 
-    Local oStmt := FWPreparedStatement():New()
-    Local cQuery as character
-    Local nI    as integer
+	Local oStmt := FWPreparedStatement():New()
+	Local cQuery as character
+	Local nI    as integer
 
-    cQuery := " SELECT ZB4.ZB4_COD, ZB4.ZB4_REV, ZB4.ZB4_CLIENT, ZB4.ZB4_LOJA, ZB4.ZB4_TICKET, "
-    cQuery += "        ZB5.ZB5_DEFIN, ZB5.ZB5_ITEM, ZB5.ZB5_DEMAND, ZB5.ZB5_TTHRNM "
-    cQuery += cFiltro
-    cQuery += " ORDER BY ZB5.ZB5_DEFIN, ZB4.ZB4_COD, ZB4.ZB4_REV, ZB5.ZB5_ITEM "
+	cQuery := " SELECT ZB4.ZB4_COD, ZB4.ZB4_REV, ZB4.ZB4_CLIENT, ZB4.ZB4_LOJA, ZB4.ZB4_TICKET, "
+	cQuery += "        ZB5.ZB5_DEFIN, ZB5.ZB5_ITEM, ZB5.ZB5_DEMAND, ZB5.ZB5_TTHRNM "
+	cQuery += cFiltro
+	cQuery += " ORDER BY ZB5.ZB5_DEFIN, ZB4.ZB4_COD, ZB4.ZB4_REV, ZB5.ZB5_ITEM "
 
-    oStmt:SetQuery( cQuery )
+	oStmt:SetQuery( cQuery )
 
-    For nI := 1 To Len( aParams )
-        If ValType( aParams[nI] ) == "D"
-            oStmt:SetDate( nI, aParams[nI] )
-        Else
-            oStmt:SetString( nI, aParams[nI] )
-        EndIf
-    Next nI
+	For nI := 1 To Len( aParams )
+		If ValType( aParams[nI] ) == "D"
+			oStmt:SetDate( nI, aParams[nI] )
+		Else
+			oStmt:SetString( nI, aParams[nI] )
+		EndIf
+	Next nI
 
 Return oStmt:GetFixQuery()
 
 Static Function QryResumo( cFiltro, aParams )
 
-    Local oStmt := FWPreparedStatement():New()
-    Local cQuery as character
-    Local nI    as integer
+	Local oStmt := FWPreparedStatement():New()
+	Local cQuery as character
+	Local nI    as integer
 
-    cQuery := " SELECT ZB2.ZB2_COD, ZB2.ZB2_DESC, "
-    cQuery += "        COUNT(*) ITENS, "
-    cQuery += "        AVG(ZB5.ZB5_TTHRNM) MEDIA, MIN(ZB5.ZB5_TTHRNM) MINIMO, MAX(ZB5.ZB5_TTHRNM) MAXIMO, "
-    cQuery += "        SUM(ZB6T.HDOC) * 100 / NULLIF(SUM(ZB5.ZB5_TTHRNM), 0) PDOC, "
-    cQuery += "        SUM(ZB6T.HDEV) * 100 / NULLIF(SUM(ZB5.ZB5_TTHRNM), 0) PDEV, "
-    cQuery += "        SUM(ZB6T.HANA) * 100 / NULLIF(SUM(ZB5.ZB5_TTHRNM), 0) PANA, "
-    cQuery += "        SUM(ZB6T.HVAL) * 100 / NULLIF(SUM(ZB5.ZB5_TTHRNM), 0) PVAL "
-    cQuery += cFiltro
-    cQuery += " GROUP BY ZB2.ZB2_COD, ZB2.ZB2_DESC "
-    cQuery += " ORDER BY ZB2.ZB2_COD "
+	cQuery := " SELECT ZB2.ZB2_COD, ZB2.ZB2_DESC, "
+	cQuery += "        COUNT(*) ITENS, "
+	cQuery += "        AVG(ZB5.ZB5_TTHRNM) MEDIA, MIN(ZB5.ZB5_TTHRNM) MINIMO, MAX(ZB5.ZB5_TTHRNM) MAXIMO, "
+	cQuery += "        SUM(ZB6T.HDOC) * 100 / NULLIF(SUM(ZB5.ZB5_TTHRNM), 0) PDOC, "
+	cQuery += "        SUM(ZB6T.HDEV) * 100 / NULLIF(SUM(ZB5.ZB5_TTHRNM), 0) PDEV, "
+	cQuery += "        SUM(ZB6T.HANA) * 100 / NULLIF(SUM(ZB5.ZB5_TTHRNM), 0) PANA, "
+	cQuery += "        SUM(ZB6T.HVAL) * 100 / NULLIF(SUM(ZB5.ZB5_TTHRNM), 0) PVAL "
+	cQuery += cFiltro
+	cQuery += " GROUP BY ZB2.ZB2_COD, ZB2.ZB2_DESC "
+	cQuery += " ORDER BY ZB2.ZB2_COD "
 
-    oStmt:SetQuery( cQuery )
+	oStmt:SetQuery( cQuery )
 
-    For nI := 1 To Len( aParams )
-        If ValType( aParams[nI] ) == "D"
-            oStmt:SetDate( nI, aParams[nI] )
-        Else
-            oStmt:SetString( nI, aParams[nI] )
-        EndIf
-    Next nI
+	For nI := 1 To Len( aParams )
+		If ValType( aParams[nI] ) == "D"
+			oStmt:SetDate( nI, aParams[nI] )
+		Else
+			oStmt:SetString( nI, aParams[nI] )
+		EndIf
+	Next nI
 
 Return oStmt:GetFixQuery()
 
 Static Function FiltraDetalhe( oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos )
 
-    Local cCod as character
-    Local nI   as integer
+	Local cCod as character
+	Local nI   as integer
 
-    aSize( aDetalhe, 0 )
+	aSize( aDetalhe, 0 )
 
-    If !Empty( aResumo ) .And. oBrowseRes:At() > 0
-    
-        cCod := aResumo[ oBrowseRes:At() ][10]
+	If !Empty( aResumo ) .And. oBrowseRes:At() > 0
 
-        For nI := 1 to Len( aDetTodos )
+		cCod := aResumo[ oBrowseRes:At() ][10]
 
-            If aDetTodos[nI][6] == cCod
-                aAdd( aDetalhe, aDetTodos[nI] )
-            EndIf
+		For nI := 1 to Len( aDetTodos )
 
-        Next nI
-    
-    EndIf
+			If aDetTodos[nI][6] == cCod
+				aAdd( aDetalhe, aDetTodos[nI] )
+			EndIf
 
-    oBrowseDet:SetArray( aDetalhe )
-    oBrowseDet:Refresh( .T. )
+		Next nI
+
+	EndIf
+
+	oBrowseDet:SetArray( aDetalhe )
+	oBrowseDet:Refresh( .T. )
 
 Return .T.
 
 Static Function Visualizar( cOrcamento )
 
-    Local aArea := GetArea()
-    Local aFields := StrTokArr2( cOrcamento, "/", .T. )
-    Local cChave := FWxFilial("ZB4") + aFields[1] + aFields[2]
+	Local aArea := GetArea()
+	Local aFields := StrTokArr2( cOrcamento, "/", .T. )
+	Local cChave := FWxFilial("ZB4") + aFields[1] + aFields[2]
 
-    DbSelectArea("ZB4")
-    ZB4->(DbSetOrder(1))
-    ZB4->(DbSeek(cChave))
+	DbSelectArea("ZB4")
+	ZB4->(DbSetOrder(1))
+	ZB4->(DbSeek(cChave))
 
-    FWExecView("Visualizar", FormatStr("VIEWDEF.%c.ZORCA04", NZORCA04), MODEL_OPERATION_VIEW)
+	FWExecView("Visualizar", FormatStr("VIEWDEF.%c.ZORCA04", NZORCA04), MODEL_OPERATION_VIEW)
 
-    RestArea(aArea)
+	RestArea(aArea)
 
 Return
