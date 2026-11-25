@@ -284,7 +284,7 @@ User Function Estornar( oModal, oPanel )
     	Return .F.
     EndIf
 
-    If !U_VldAprovador()
+    If !U_VldAprovador() .Or. !VldRevisao( ZB4->ZB4_COD, ZB4->ZB4_REV )
     	Return .F.
     EndIf
 
@@ -305,7 +305,7 @@ User Function Estornar( oModal, oPanel )
                     ZB4->ZB4_DTAPR  := CtoD("")   
                     ZB4->ZB4_HRAPR  := ""
 
-                    If !U_GravaHist( ACAO_APROVADO, cObs )
+                    If !U_GravaHist( ACAO_ESTORNADO, cObs )
                         Help( , , "ZORCA05", , "Ocorreu um erro ao gravar o histórico.", 1, 0 )
                         DisarmTransaction()
                     EndIf   
@@ -346,8 +346,10 @@ User Function VldEnvio( oModel )
 
 			For n2 := 1 to oModelZB6:Length()
 
+                oModelZB6:GoLine(n2)
+
                 If !oModelZB6:IsDeleted(n2) .And. !oModelZB6:IsEmpty()
-                    **exit**
+                    exit
                 ElseIf n2 == oModelZB6:Length()
                     lRet := .F.
 				EndIf
@@ -364,6 +366,7 @@ User Function GravaHist(  cAcao, cObs as character )
     Local cSeq := "001"
     Local cQuery    := U_QuerySet( "ZB7", { "MAX(ZB7_SEQ) ZB7_SEQ" }, { {"ZB7_COD = ", ZB4->ZB4_COD}, {"ZB7_REV = ", ZB4->ZB4_REV} } )
     Local cAliasQry := MPSysOpenQuery( cQuery )
+    Local cUser as character
 
     If !(cAliasQry)->(EoF())
         cSeq := StrZero(Val((cAliasQry)->ZB7_SEQ) + 1, 3)
@@ -371,18 +374,36 @@ User Function GravaHist(  cAcao, cObs as character )
 
     (cAliasQry)->( dbCloseArea() )
 
-    If RecLock("ZB7", .T.) // .T. = inclusão
+    If Reclock("ZB7", .T.)
+        cUser := RetCodUsr()
+
+        If (cAcao != ACAO_ENVIADO .Or. cAcao != ACAO_REPROVADO) .And. !Reclock("ZB4", .F.)
+            Help( , , "ZORCA05", , "Erro.", 1, 0 )
+            Return lRet
+        EndIf
+
+        If cAcao == ACAO_APROVADO
+            ZB4->ZB4_USRAPR := cUser
+            ZB4->ZB4_DTAPR  := Date() 
+            ZB4->ZB4_HRAPR  := Left( Time(), 5 )
+        ElseIf cAcao == ACAO_ESTORNADO
+            ZB4->ZB4_USRAPR := ""
+            ZB4->ZB4_DTAPR  := CtoD("")   
+            ZB4->ZB4_HRAPR  := ""
+        EndIf
+
         ZB7->ZB7_FILIAL := xFilial("ZB7")
         ZB7->ZB7_COD := ZB4->ZB4_COD
         ZB7->ZB7_REV := ZB4->ZB4_REV
         ZB7->ZB7_SEQ := cSeq
         ZB7->ZB7_ACAO := cAcao
-        ZB7->ZB7_USER := RetCodUsr()
+        ZB7->ZB7_USER := cUser
         ZB7->ZB7_DATA := Date() 
-        ZB7->ZB7_HORA := Time()
+        ZB7->ZB7_HORA := Left( Time(), 5 )
         ZB7->ZB7_OBS := cObs
 
         ZB7->( MsUnlock() )
+        ZB4->( MsUnlock() )
         lRet := .T.
     EndIf
 
@@ -398,7 +419,7 @@ User Function VldAprovador()
     Local cAliasQry := MPSysOpenQuery(cQuery)
 
     If !(cAliasQry)->(EoF()) .And. (cAliasQry)->ZB3_ATIVO == ATIVO_SIM
-        If ZB4->ZB4_STATUS == STATUS_ENVIADO .And. cUser == ZB4->ZB4_USRINC
+        If ZB4->ZB4_STATUS != STATUS_RASCUNHO .And. cUser == ZB4->ZB4_USRINC
             Help( , , "ZORCA05", , "Aprovador deve ser diferente do criador.", 1, 0 )
             lRet := .F.
         EndIf
@@ -406,5 +427,19 @@ User Function VldAprovador()
         Help( , , "ZORCA05", , "Usuário não é aprovador ativo.", 1, 0 )
         lRet := .F.
     EndIf
+
+Return lRet
+
+Static Function vldRevisao( cCod as character, cRev as character ) as logical
+
+    Local cQuery    := U_QuerySet( "ZB4", { "ZB4_REV" }, { { "ZB4_COD = ", cCod }, { "ZB4_REV > ", cRev } } )
+    Local cAliasQry := MPSysOpenQuery( cQuery )
+    Local lRet      := (cAliasQry)->( EoF() )
+
+    If !lRet
+        Help( , , "ZORCA05", , "Orçamento possui revisao mais recente", 1, 0 )
+    EndIf
+
+    (cAliasQry)->( dbCloseArea() )
 
 Return lRet
