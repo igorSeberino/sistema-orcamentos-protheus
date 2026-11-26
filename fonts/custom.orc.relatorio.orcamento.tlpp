@@ -17,9 +17,9 @@ Static Function ReportDef()
 
 	Local oReport  := TReport():New( "ZORCR01", "Impressao do Orcamento", /*cPergunta*/, ;
 		{ |oRep| ReportPrint( oRep ) }, "Imprime o orcamento posicionado" )
-	Local oSecCab  := TRSection():New( oReport, "Orcamento", { "ZB4" } )
-	Local oSecItem := TRSection():New( oSecCab, "Orcamento", { "ZB4" } )
-	Local oSecAtiv := TRSection():New( oSecItem, "Orcamento", { "ZB4" } )
+	Local oSecCab  := TRSection():New( oReport, "Orcamento",  { "ZB4" } )
+	Local oSecItem := TRSection():New( oSecCab, "Item",       { "ZB5" } )
+	Local oSecAtiv := TRSection():New( oSecItem, "Atividade", { "ZB6" } )
 
 	//Campo + Alias
 	TRCell():New( oSecCab, "ZB4_COD",     "ZB4", , , , , , , , , , , , RGB( 242, 242, 242 ) )
@@ -49,16 +49,22 @@ Static Function ReportDef()
 
 Return oReport
 
-Static Function ReportPrint( oReport )
+Static Function ReportPrint( oReport as object )
 
 	Local oSecCab := oReport:Section( 1 )
 	Local oSecItem := oSecCab:Section( 1 )
 	Local oSecAtiv := oSecItem:Section( 1 )
 	Local aArea := GetArea()
-	Local aAreaZB5 := ZB5->( GetArea() )
-	Local aAreaZB6 := ZB6->( GetArea() )
+	Local aAreaZB5 as array
+	Local aAreaZB6 as array
 	Local cChaveZB5 := xFilial("ZB5") + ZB4->ZB4_COD + ZB4->ZB4_REV
 	Local cChaveZB6 as character
+
+	DbSelectArea("ZB5")
+	aAreaZB5 := ZB5->(GetArea())
+
+	DbSelectArea("ZB6")
+	aAreaZB6 := ZB6->(GetArea())
 
 	oSecCab:Init()
 	oSecCab:PrintLine()
@@ -68,6 +74,10 @@ Static Function ReportPrint( oReport )
 
 	// Percorre a ZB5
 	While ZB5->( !EoF() ) .And. ZB5->( ZB5_FILIAL + ZB5_COD + ZB5_REV ) == cChaveZB5
+
+		If oReport:Cancel()
+			Exit
+		EndIf
 
 		oSecItem:Init()
 		oSecItem:PrintLine()
@@ -81,6 +91,10 @@ Static Function ReportPrint( oReport )
 
 		// Percorre a ZB6
 		While ZB6->( !EoF() ) .And. ZB6->( ZB6_FILIAL + ZB6_COD + ZB6_REV + ZB6_ITEM ) == cChaveZB6
+
+			If oReport:Cancel()
+				Exit
+			EndIf
 
 			oSecAtiv:PrintLine()
 			ZB6->( DbSkip() )

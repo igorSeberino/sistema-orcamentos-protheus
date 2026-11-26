@@ -364,7 +364,7 @@ Return nTotal
 
 	@return logical
 /*/
-User Function CalcHrsRows( cModelCount, cFieldCount, cModel, cField )
+User Function CalcHrsRows( cModelCount as character, cFieldCount as character, cModel as character, cField as character )
 
 	Local oModel := FWModelActive()
 	Local oGrid := oModel:GetModel(cModelCount)
@@ -398,7 +398,7 @@ Return .T.
 
 	@since 03/11/2026
 /*/
-Static Function RemoveFields( oStruZB4, oStruZB5, oStruZB6, oStruZB7 )
+Static Function RemoveFields( oStruZB4 as object, oStruZB5 as object, oStruZB6 as object, oStruZB7 as object )
 
 	// ZB4
 	oStruZB4:RemoveField("ZB4_HRDNUM")
@@ -441,7 +441,7 @@ User Function VldActivate( oModel as object )
 
 Return lRet
 
-Static Function RelationSet( oModel )
+Static Function RelationSet( oModel as object )
 
 	// Define relação entre ZB4 e ZB5
 	oModel:SetRelation("ZB5DETAIL", { ;
@@ -467,7 +467,7 @@ Static Function RelationSet( oModel )
 
 Return
 
-User Function HideHist( oView )
+User Function HideHist( oView as object )
 
 	Local oModel := oView:GetModel()
 
@@ -478,7 +478,7 @@ User Function HideHist( oView )
 
 Return
 
-User Function ZB4Activate( oModel )
+User Function ZB4Activate( oModel as object )
 
 	Local oModelZB4 := oModel:GetModel( "ZB4MASTER" )
 
@@ -497,7 +497,7 @@ User Function ZB4Activate( oModel )
 
 Return .T.
 
-User Function ModelCommit( oModel )
+User Function ModelCommit( oModel as object )
 
 	Local oModelZB5 := oModel:GetModel("ZB5DETAIL")
 	Local oModelZB6 := oModel:GetModel("ZB6DETAIL")
@@ -555,7 +555,7 @@ User Function VldAprovador()
 
 Return lRet
 
-Static Function AtivSimilares( oView )
+Static Function AtivSimilares( oView as object )
 
 	Local oModel := oView:GetModel():GetModel( "ZB5DETAIL" )
 	Local cDef := oModel:GetValue( "ZB5_DEFIN" )

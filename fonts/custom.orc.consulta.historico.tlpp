@@ -14,32 +14,35 @@ using namespace custom.orc.utils
 	
     @since 16/11/2026
 /*/
-User Function ZORCA07( cDef )
+User Function ZORCA07( cDef as character )
 
-	Local oModal := FWDialogModal():New()
-	Local oPanel := oModal:GetPanelMain()
-	Local oGet
+	Local oModal := FWDialogModal():New() as object
+	Local oPanel := oModal:GetPanelMain() as object
+	Local oGet as object
 
 	Local oBrowseRes as object
 	Local oBrowseDet as object
 
+	Local aDetalhe := {} as array
+
+	Local aResumo := {} as array
+	Local aDetTodos := {} as array
+
+	Local cArea    := Space( TamSX3("ZB5_AREA")[1] ) as character
+	Local cCli     := Space( TamSX3("ZB4_CLIENT")[1] ) as character
+	Local dDateIni := CtoD("") as date
+	Local dDateFin := CtoD("") as date
+	Local lAprov   := .F. as logical
+
+	Local oCheck as object
+	Local oFontTitle := TFont():New("Arial", , -20, , .T.) as object
+	Local oFontSubt := TFont():New("Arial", , -16, , .T.) as object
+	Local oFont := TFont():New("Arial", , -12) as object
+
 	Local aButtons := {;
-		{ , "Visualizar Orçamento", { || Visualizar( aDetalhe[oBrowseDet:At(), 1] ) }, , 1, .T., .F. }, ;
-		{ , "Exportar Excel", { || }, , 2, .T., .F. } ;
-		}
-
-	Local aDetalhe := {}
-	Local aResumo := {}
-	Local aDetTodos := {}
-
-	Local cArea    := Space( TamSX3("ZB5_AREA")[1] )
-	Local cCli     := Space( TamSX3("ZB4_CLIENT")[1] )
-	Local dDateIni := CtoD("")
-	Local dDateFin := CtoD("")
-
-	Local oFontTitle := TFont():New("Arial", , -20, , .T.)
-	Local oFontSubt := TFont():New("Arial", , -16, , .T.)
-	Local oFont := TFont():New("Arial", , -12)
+		{ , "Visualizar Orçamento", { || Visualizar( aDetalhe, oBrowseDet ) }, , 1, .T., .F. }, ;
+		{ , "Exportar Excel", { || ExportExcel( aResumo, aDetTodos, cDef, cArea, cCli, dDateIni, dDateFin, lAprov ) }, , 2, .T., .F. } ;
+		} as array
 
 	If Empty(cDef)
 		cDef := Space( TamSX3("ZB5_DEFIN")[1] )
@@ -57,33 +60,37 @@ User Function ZORCA07( cDef )
 	TSay():New( 031, 010, { || "Definição" }, oPanel, , oFontSubt, , , , .T., , , 040, 010 )
 	oGet := TGet():New( 030, 050, { |u| If( PCount() > 0, cDef := u, cDef ) }, oPanel, 025, 010, "@!", , , , oFont, , , .T. )
 	oGet:cF3 := "ZB2"
-	oGet:bValid := { ||( Empty(cDef) .Or. U_VldDefin( cDef ) ) .And. Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ) }
+	oGet:bValid := { ||( Empty(cDef) .Or. U_VldDefin( cDef ) ) .And. Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, lAprov, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ) }
 
 	// Campo Área
 	TSay():New( 031, 085, { || "Área" }, oPanel, , oFontSubt, , , , .T., , , 020, 010 )
 	oGet := TGet():New( 030, 105, { |u| If( PCount() > 0, cArea := u, cArea ) }, oPanel, 025, 010, "@!", , , , oFont, , , .T. )
 	oGet:cF3 := "ZB1"
-	oGet:bValid := { || ( Empty(cArea) .Or. U_VldArea( cArea ) ) .And. Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ) }
+	oGet:bValid := { || ( Empty(cArea) .Or. U_VldArea( cArea ) ) .And. Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, lAprov, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ) }
 
 	// Campo Cliente
 	TSay():New( 031, 140, { || "Cliente" }, oPanel, , oFontSubt, , , , .T., , , 030, 010 )
 	oGet := TGet():New( 030, 170, { |u| If( PCount() > 0, cCli := u, cCli ) }, oPanel, 025, 010, "@!", , , , oFont, , , .T. )
 	oGet:cF3 := "SA1"
-	oGet:bValid := { || ( Empty(cCli) .Or. ExistCpo( "SA1", cCli ) ) .And. Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ) }
+	oGet:bValid := { || ( Empty(cCli) .Or. ExistCpo( "SA1", cCli ) ) .And. Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, lAprov, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ) }
 
 	// Campo Data Init
 	TSay():New( 031, 210, { || "Período de" }, oPanel, , oFontSubt, , , , .T., , , 050, 010 )
 	oGet := TGet():New( 030, 255, { |u| If( PCount() > 0, dDateIni := u, dDateIni ) }, oPanel, 050, 010, , , , , oFont, , , .T., , , , , , , , , , , , , , .T. )
 	oGet:bValid := { || IIf(;
-		Empty(dDateIni) .Or. Empty(dDateFin) .Or. (dDateIni < dDateFin), ( Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ), .T. ),;
+		Empty(dDateIni) .Or. Empty(dDateFin) .Or. (dDateIni <= dDateFin), ( Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, lAprov, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ), .T. ),;
 		(Help( , , "HELP", , "Data inicial maior que a final", 1, 0 ), .F.) ) }
 
 	// Campo Data Fin
 	TSay():New( 031, 305, { || "até" }, oPanel, , oFontSubt, , , , .T., , , 020, 010 )
 	oGet := TGet():New( 030, 320, { |u| If( PCount() > 0, dDateFin := u, dDateFin ) }, oPanel, 050, 010, , , , , oFont, , , .T., , , , , , , , , , , , , , .T. )
 	oGet:bValid := { || IIf(;
-		Empty(dDateFin) .Or. Empty(dDateIni) .Or. (dDateIni < dDateFin), ( Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ), .T. ),;
+		Empty(dDateFin) .Or. Empty(dDateIni) .Or. (dDateIni <= dDateFin), ( Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, lAprov, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ), .T. ),;
 		(Help( , , "HELP", , "Data inicial maior que a final", 1, 0 ), .F.) ) }
+
+	oCheck := TCheckBox():New( 033, 375, "Somente aprovados", { |u| If( PCount() > 0, lAprov := u, lAprov ) }, oPanel, 100, 010, , ;
+		{ || Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, lAprov, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ) }, oFontSubt, , , , , .T. )
+	oCheck:SetCss( "QCheckBox::indicator { width: 24px; height: 24px; }" )
 
 	// Botões da barra inferior
 	oModal:addButtons( aButtons )
@@ -95,7 +102,7 @@ User Function ZORCA07( cDef )
 	TSay():New( 050, 010, { || "Resumo" }, oPanel, , oFontSubt, , , , .T., , , 100, 012 )
 	oBrowseRes := Resumo( oPanel, aResumo, { || FiltraDetalhe( oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ) } )
 
-	Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos )
+	Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, lAprov, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos )
 
 	oModal:Activate()
 
@@ -110,10 +117,10 @@ Return
 	
     @since 16/11/2026
 /*/
-Static Function Resumo( oPanel, aResumo, bChange )
+Static Function Resumo( oPanel as object, aResumo as array, bChange as codeblock )
 
-	Local oPanelRes := TPanel():New( 062, 010, , oPanel, , , , , , 530, 060 )
-	Local oBrowseRes := FWBrowse():New( oPanelRes )
+	Local oPanelRes := TPanel():New( 062, 010, , oPanel, , , , , , 530, 060 ) as object
+	Local oBrowseRes := FWBrowse():New( oPanelRes ) as object
 
 	oBrowseRes:SetDataArray()
 	oBrowseRes:SetArray( aResumo )
@@ -143,10 +150,10 @@ Return oBrowseRes
 	
     @since 16/11/2026
 /*/
-Static Function Detalhe( oPanel, aDetalhe )
+Static Function Detalhe( oPanel as object, aDetalhe as array )
 
-	Local oPanelDet := TPanel():New( 140, 010, , oPanel, , , , , , 530, 100 )
-	Local oBrowseDet := FWBrowse():New( oPanelDet )
+	Local oPanelDet := TPanel():New( 140, 010, , oPanel, , , , , , 530, 100 ) as object
+	Local oBrowseDet := FWBrowse():New( oPanelDet ) as object
 
 	oBrowseDet:SetDataArray()
 	oBrowseDet:SetArray( aDetalhe )
@@ -171,9 +178,9 @@ Return oBrowseDet
 	
     @since 16/11/2026
 /*/
-Static Function NovaCol( cTitulo, bDado, cTipo, nTam, nDec, cPict, nAlign )
+Static Function NovaCol( cTitulo as character, bDado as codeblock, cTipo as character, nTam as numeric, nDec as numeric, cPict as character, nAlign as numeric )
 
-	Local oCol := FWBrwColumn():New()
+	Local oCol := FWBrwColumn():New() as object
 
 	oCol:SetTitle( cTitulo )
 	oCol:SetData( bDado )
@@ -182,7 +189,7 @@ Static Function NovaCol( cTitulo, bDado, cTipo, nTam, nDec, cPict, nAlign )
 	oCol:SetDecimal( nDec )
 	oCol:SetPicture( cPict )
 
-	If nAlign != Nil
+	If !Empty(nAlign)
 		oCol:SetAlign( nAlign )
 	EndIf
 
@@ -198,14 +205,14 @@ Return oCol
 	
     @since 16/11/2026
 /*/
-Static Function Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos )
+Static Function Pesquisar( cDef as character, cArea as character, cCli as character, dDateIni as date, dDateFin as date, lAprov as logical, oBrowseRes as object, aResumo as array, oBrowseDet as object, aDetalhe as array, aDetTodos as array )
 
-	Local aArea   := GetArea()
-	Local aParams := {}
+	Local aArea   := GetArea() as array
+	Local aParams := {} as array
 	Local cFiltro as character
 	Local cAlias  as character
 
-	cFiltro := Filtros( cDef, cArea, cCli, dDateIni, dDateFin, aParams )
+	cFiltro := Filtros( cDef, cArea, cCli, dDateIni, dDateFin, lAprov, aParams )
 
 	//Resumo
 	aSize( aResumo, 0 )
@@ -231,7 +238,8 @@ Static Function Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aR
 			(cAlias)->ZB4_TICKET, ;
 			(cAlias)->ZB5_DEMAND, ;
 			U_NumToHours((cAlias)->ZB5_TTHRNM), ;
-			(cAlias)->ZB5_DEFIN } )
+			(cAlias)->ZB5_DEFIN, ;
+			(cAlias)->ZB5_TTHRNM } )
 		(cAlias)->(DbSkip())
 	EndDo
 	(cAlias)->(DbCloseArea())
@@ -245,7 +253,7 @@ Static Function Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, oBrowseRes, aR
 
 Return .T.
 
-Static Function Filtros( cDef, cArea, cCli, dDateIni, dDateFin, aParams )
+Static Function Filtros( cDef as character, cArea as character, cCli as character, dDateIni as date, dDateFin as date, lAprov as logical, aParams as array )
 
 	Local cFiltro as character
 
@@ -304,11 +312,16 @@ Static Function Filtros( cDef, cArea, cCli, dDateIni, dDateFin, aParams )
 		aAdd( aParams, dDateFin )
 	EndIf
 
+	If lAprov
+		cFiltro += " AND ZB4.ZB4_STATUS = ? "
+		aAdd( aParams, STATUS_APROVADO )
+	EndIf
+
 Return cFiltro
 
-Static Function QryDetalhe( cFiltro, aParams )
+Static Function QryDetalhe( cFiltro as character, aParams as array )
 
-	Local oStmt := FWPreparedStatement():New()
+	Local oStmt := FWPreparedStatement():New() as object
 	Local cQuery as character
 	Local nI    as integer
 
@@ -329,9 +342,9 @@ Static Function QryDetalhe( cFiltro, aParams )
 
 Return oStmt:GetFixQuery()
 
-Static Function QryResumo( cFiltro, aParams )
+Static Function QryResumo( cFiltro as character, aParams as array )
 
-	Local oStmt := FWPreparedStatement():New()
+	Local oStmt := FWPreparedStatement():New() as object
 	Local cQuery as character
 	Local nI    as integer
 
@@ -358,7 +371,7 @@ Static Function QryResumo( cFiltro, aParams )
 
 Return oStmt:GetFixQuery()
 
-Static Function FiltraDetalhe( oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos )
+Static Function FiltraDetalhe( oBrowseRes as object, aResumo as array, oBrowseDet as object, aDetalhe as array, aDetTodos as array )
 
 	Local cCod as character
 	Local nI   as integer
@@ -384,11 +397,19 @@ Static Function FiltraDetalhe( oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTo
 
 Return .T.
 
-Static Function Visualizar( cOrcamento )
+Static Function Visualizar( aDetalhe as array, oBrowseDet as object )
 
-	Local aArea := GetArea()
-	Local aFields := StrTokArr2( cOrcamento, "/", .T. )
-	Local cChave := FWxFilial("ZB4") + aFields[1] + aFields[2]
+	Local aArea   := GetArea()
+	Local aFields as array
+	Local cChave  as character
+
+	If Empty(aDetalhe) .Or. oBrowseDet:At() < 1
+		Help( , , "HELP", , "Nenhum orçamento para visualizar.", 1, 0 )
+		Return
+	EndIf
+
+	aFields := StrTokArr2( aDetalhe[oBrowseDet:At(), 1], "/", .T. )
+	cChave := FWxFilial("ZB4") + aFields[1] + aFields[2]
 
 	DbSelectArea("ZB4")
 	ZB4->(DbSetOrder(1))
@@ -399,3 +420,160 @@ Static Function Visualizar( cOrcamento )
 	RestArea(aArea)
 
 Return
+
+Static Function ExportExcel( aResumo as array, aDetTodos as array, cDef as character, cArea as character, cCli as character, dDateIni as date, dDateFin as date, lAprov as logical )
+
+	Local oXlsx    := FwPrinterXlsx():New() as object
+	Local cFiltros := DescFiltros( cDef, cArea, cCli, dDateIni, dDateFin, lAprov ) as character
+	Local cArqRel  := "\spool\" + StrTran( NomeArquivo( cDef ), ".xlsx", ".rel" ) as character
+	Local cArqXlsx := StrTran( cArqRel, ".rel", ".xlsx" ) as character
+	Local cFonte   := FwPrinterFont():getFromName( "Arial" ) as character
+	Local cHorEsq  := "1" as character   // horizontal: 1 = esquerda (FwXlsxHorizontalAlignment)
+	Local cVertCen := "3" as character   // vertical:   3 = centro   (FwXlsxVerticalAlignment)
+	Local aCab     as array
+	Local aLinha   as array
+	Local nI       as integer
+	Local nC       as integer
+	Local nLin     as integer
+
+	If Empty( aDetTodos )
+		Help( , , "HELP", , "Não há dados para exportar.", 1, 0 )
+		Return
+	EndIf
+
+	If !oXlsx:Activate( cArqRel )
+		Help( , , "HELP", , "Não foi possível preparar o arquivo " + cArqRel, 1, 0 )
+		Return
+	EndIf
+
+	// Aba Resumo: uma linha por Definição
+	oXlsx:AddSheet( "Resumo" )
+	oXlsx:SetColumnsWidth( 1, 9, 14 )
+
+	// Linha 1: título com os filtros
+	oXlsx:SetFont( cFonte, 12, .F., .T., .F. )
+	oXlsx:SetCellsFormat( cHorEsq, cVertCen, .F., 0, "000000", "FFFFFF", "" )
+	oXlsx:SetText( 1, 1, "Consulta Histórica - Resumo | " + cFiltros )
+
+	// Linha 2: cabeçalho azul com texto branco
+	aCab := { "Def.", "Itens", "Média Hrs", "Min. Hrs", "Max. Hrs", "Documentação", "Dev", "Análise", "Valor" }
+	oXlsx:SetFont( cFonte, 10, .F., .T., .F. )
+	oXlsx:SetCellsFormat( cHorEsq, cVertCen, .F., 0, "E9EEF4", "1F4E79", "" )
+	For nC := 1 To Len( aCab )
+		oXlsx:SetText( 2, nC, aCab[nC] )
+	Next nC
+
+	// Dados a partir da linha 3, alternando a cor de fundo
+	oXlsx:SetFont( cFonte, 10, .F., .F., .F. )
+	For nI := 1 To Len( aResumo )
+		nLin := nI + 2
+		oXlsx:SetCellsFormat( cHorEsq, cVertCen, .F., 0, "000000", IIf( nI % 2 == 0, "E9EEF4", "FFFFFF" ), "" )
+
+		aLinha := { AllTrim( aResumo[nI,1] ), aResumo[nI,2], aResumo[nI,3], aResumo[nI,4], aResumo[nI,5], ;
+			AllTrim( Transform( aResumo[nI,6], "@E 999.99" ) ) + " %", ;
+			AllTrim( Transform( aResumo[nI,7], "@E 999.99" ) ) + " %", ;
+			AllTrim( Transform( aResumo[nI,8], "@E 999.99" ) ) + " %", ;
+			AllTrim( Transform( aResumo[nI,9], "@E 999.99" ) ) + " %" }
+
+		For nC := 1 To Len( aLinha )
+			If ValType( aLinha[nC] ) == "N"
+				oXlsx:SetNumber( nLin, nC, aLinha[nC] )
+			Else
+				oXlsx:SetText( nLin, nC, aLinha[nC] )
+			EndIf
+		Next nC
+	Next nI
+
+	// Aba Detalhe: uma linha por item de orçamento
+	oXlsx:AddSheet( "Detalhe" )
+	oXlsx:SetColumnsWidth( 1, 4, 16 )   // Def., Orçamento, Cliente, Ticket
+	oXlsx:SetColumnsWidth( 5, 5, 60 )   // Demanda
+	oXlsx:SetColumnsWidth( 6, 6, 10 )   // Horas
+
+	// Linha 1: título com os filtros
+	oXlsx:SetFont( cFonte, 12, .F., .T., .F. )
+	oXlsx:SetCellsFormat( cHorEsq, cVertCen, .F., 0, "000000", "FFFFFF", "" )
+	oXlsx:SetText( 1, 1, "Consulta Histórica - Detalhe | " + cFiltros )
+
+	// Linha 2: cabeçalho azul com texto branco
+	aCab := { "Def.", "Orçamento", "Cliente", "Ticket", "Demanda", "Horas" }
+	oXlsx:SetFont( cFonte, 10, .F., .T., .F. )
+	oXlsx:SetCellsFormat( cHorEsq, cVertCen, .F., 0, "E9EEF4", "1F4E79", "" )
+	For nC := 1 To Len( aCab )
+		oXlsx:SetText( 2, nC, aCab[nC] )
+	Next nC
+
+	// Dados a partir da linha 3, alternando a cor de fundo
+	oXlsx:SetFont( cFonte, 10, .F., .F., .F. )
+	For nI := 1 To Len( aDetTodos )
+		nLin := nI + 2
+		oXlsx:SetCellsFormat( cHorEsq, cVertCen, .F., 0, "000000", IIf( nI % 2 == 0, "E9EEF4", "FFFFFF" ), "" )
+
+		aLinha := { AllTrim( aDetTodos[nI,6] ), AllTrim( aDetTodos[nI,1] ), AllTrim( aDetTodos[nI,2] ), ;
+			AllTrim( aDetTodos[nI,3] ), AllTrim( aDetTodos[nI,4] ), aDetTodos[nI,5] }
+
+		For nC := 1 To Len( aLinha )
+			oXlsx:SetText( nLin, nC, aLinha[nC] )
+		Next nC
+	Next nI
+
+	oXlsx:toXlsx()
+	oXlsx:EraseBaseFile()   // apaga o .rel intermediário
+	oXlsx:DeActivate()
+
+	If File( cArqXlsx )
+		CpyS2T( cArqXlsx, GetTempPath() )   // copia do servidor para a máquina do usuário
+	Else
+		Help( , , "HELP", , "Planilha não foi gerada: " + cArqXlsx, 1, 0 )
+	EndIf
+
+Return
+
+/*/{Protheus.doc} DescFiltros
+	Monta o texto dos filtros usados, para o título das tabelas da planilha
+
+    @author igor seberino
+
+    @type function
+
+    @since 25/11/2026
+/*/
+Static Function DescFiltros( cDef as character, cArea as character, cCli as character, dDateIni as date, dDateFin as date, lAprov as logical )
+
+	Local cTexto as character
+
+	cTexto := "Definição: " + IIf( Empty( cDef ), "todas", AllTrim( cDef ) )
+	cTexto += " | Área: " + IIf( Empty( cArea ), "todas", AllTrim( cArea ) )
+	cTexto += " | Cliente: " + IIf( Empty( cCli ), "todos", AllTrim( cCli ) )
+
+	If !Empty( dDateIni ) .Or. !Empty( dDateFin )
+		cTexto += " | Período: " + IIf( Empty( dDateIni ), "...", DtoC( dDateIni ) ) + " a " + IIf( Empty( dDateFin ), "...", DtoC( dDateFin ) )
+	EndIf
+
+	If lAprov
+		cTexto += " | Somente aprovados"
+	EndIf
+
+Return cTexto
+
+/*/{Protheus.doc} NomeArquivo
+	Monta o nome do arquivo com a Definição e a data da geração
+	Ex.: consulta_historica_def002_20261125.xlsx
+
+    @author igor seberino
+
+    @type function
+
+    @since 25/11/2026
+/*/
+Static Function NomeArquivo( cDef as character )
+
+	Local cNome := "consulta_historica" as character
+
+	If !Empty( cDef )
+		cNome += "_def" + AllTrim( cDef )
+	EndIf
+
+	cNome += "_" + DtoS( Date() ) + ".xlsx"
+
+Return cNome

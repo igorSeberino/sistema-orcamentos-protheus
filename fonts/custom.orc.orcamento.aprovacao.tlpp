@@ -5,7 +5,7 @@
 namespace custom.orc.orcamento.aprovacao
 using namespace custom.orc.utils
 
-User Function ZORCA05( cAction )
+User Function ZORCA05( cAction as character )
 
 	Local oModal := FWDialogModal():New()
 	Local oPanel := oModal:GetPanelMain()
@@ -23,7 +23,7 @@ User Function ZORCA05( cAction )
 
 Return .T.
 
-User Function MontaTela( oModal, oPanel, cAction, cObs )
+User Function MontaTela( oModal as object, oPanel as object, cAction as character, cObs as character )
 
 	Local bCode as CodeBlock
 	Local nOpcao as numeric
@@ -109,7 +109,7 @@ User Function MontaTela( oModal, oPanel, cAction, cObs )
 
 Return nRet
 
-User Function Envio( oModal, oPanel )
+User Function Envio( oModal as object, oPanel as object )
 
 	Local lRet as logical
 	Local cErro as character
@@ -168,7 +168,7 @@ User Function Envio( oModal, oPanel )
 
 Return .T.
 
-User Function Revisar( oModal, oPanel )
+User Function Revisar( oModal as object, oPanel as object )
 
 	Local nOpcao
 	Local aArea  as array
@@ -239,7 +239,7 @@ User Function Revisar( oModal, oPanel )
 
 Return .T.
 
-User Function NovoRascunho( oModal, oPanel )
+User Function NovoRascunho( oModal as object, oPanel as object )
 
 	Local oModel := FWLoadModel(NZORCA04 + ".U_ZORCA04")
 	Local nOpcao
@@ -287,7 +287,7 @@ User Function NovoRascunho( oModal, oPanel )
 
 Return .T.
 
-User Function Estornar( oModal, oPanel )
+User Function Estornar( oModal as object, oPanel as object )
 
 	Local nOpcao
 	Local aArea  as array
@@ -350,7 +350,7 @@ User Function Estornar( oModal, oPanel )
 
 Return .T.
 
-User Function VldEnvio( oModel )
+User Function VldEnvio( oModel as object )
 
 	Local oModelZB5 := oModel:GetModel("ZB5DETAIL")
 	Local oModelZB6 := oModel:GetModel("ZB6DETAIL")

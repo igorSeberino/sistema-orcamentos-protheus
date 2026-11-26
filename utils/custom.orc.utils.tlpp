@@ -22,7 +22,7 @@ using namespace custom.orc.orcamento.manutencao
 
 	@see ZA1CodExiste
 /*/
-User Function ModelActivate( oModel, cAlias )
+User Function ModelActivate( oModel as object, cAlias as character )
 
 	Local cCodigo
 	Local cCodField := cAlias + "_COD"
@@ -58,7 +58,7 @@ Return
 
 	@return logical, .T.=Existe, .F.=Nao Existe
 /*/
-User Function CodExiste( cCod, cAlias )
+User Function CodExiste( cCod as character, cAlias as character )
 
 	Local lExiste := .F.
 	Local cCodField := cAlias + '_COD'
@@ -94,7 +94,7 @@ Return lExiste
 
 	@return cQueryRet, query montada
 /*/
-User Function QuerySet( cAlias, aParamsSelect, aParamsWhere )
+User Function QuerySet( cAlias as character, aParamsSelect as array, aParamsWhere as array )
 
 	Local oStmt := FWPreparedStatement():New()
 	Local cQueryBase as character
@@ -177,7 +177,7 @@ Return cQueryRet
 
 	@return numeric
 /*/
-User Function HoursToNum( cHour )
+User Function HoursToNum( cHour as character )
 
 	Local nHH         as numeric
 	Local nMM         as numeric
@@ -207,7 +207,7 @@ Return nValue
 
 	@return logical
 /*/
-User Function NumToHours( nValue )
+User Function NumToHours( nValue as numeric )
 
 	Local nMinutos := Round( nValue * 60, 0 )        // arredonda o total em minutos
 	Local nHH      := Int( nMinutos / 60 )
@@ -229,7 +229,7 @@ Return cHH + ":" + StrZero( nMM, 2 )
 User Function TotalHrsCharSet( nTotal as numeric, cModel as character ) as logical
 
 	Local oModel := FWModelActive()
-	Local cAlias := Left( cModel, 3 )   
+	Local cAlias := Left( cModel, 3 )
 	Local cPai   as character
 
 	oModel:GetModel( cModel ):LoadValue( cAlias + "_TOTHR", U_NumToHours( nTotal ) )
@@ -240,7 +240,7 @@ User Function TotalHrsCharSet( nTotal as numeric, cModel as character ) as logic
 	Case cModel == "ZB5DETAIL"
 		cPai := "ZB4MASTER"
 	Otherwise
-		cPai := ""          
+		cPai := ""
 	EndCase
 
 	If !Empty( cPai )
@@ -261,7 +261,7 @@ Return .T.
 
 	@since 03/11/2026
 /*/
-User Function OnHrDayChange( nHrDia )
+User Function OnHrDayChange( nHrDia as numeric )
 
 	Local oModel    := FWModelActive()
 	Local oModelZB5 as object
@@ -383,7 +383,7 @@ Return .T.
 
     @return logical
 /*/
-User Function VldDefin( cDefin )
+User Function VldDefin( cDefin as character )
 
 	Local cQuery := U_QuerySet( "ZB2", {"ZB2_COD"}, {{"ZB2.ZB2_COD = ", cDefin}, {"ZB2.ZB2_ATIVO = ", ATIVO_SIM}} )
 	Local cAliasQry := MPSysOpenQuery(cQuery)
@@ -410,7 +410,7 @@ Return lRet
 
     @return logical
 /*/
-User Function VldArea( cArea )
+User Function VldArea( cArea as character )
 
 	Local cQuery := U_QuerySet( "ZB1", {"ZB1_COD"}, {{"ZB1.ZB1_COD = ", cArea}, {"ZB1.ZB1_ATIVO = ", ATIVO_SIM}} )
 	Local cAliasQry := MPSysOpenQuery(cQuery)
@@ -437,7 +437,7 @@ Return lRet
 
     @return logical
 /*/
-User Function VldAprov( cUser )
+User Function VldAprov( cUser as character )
 
 	Local cQuery := U_QuerySet( "ZB3", {"ZB3_USER"}, {{"ZB3.ZB3_USER = ", cUser}} )
 	Local cAliasQry := MPSysOpenQuery(cQuery)
@@ -455,7 +455,7 @@ User Function VldAprov( cUser )
 
 Return lRet
 
-User Function VldHours( cHour )
+User Function VldHours( cHour as character )
 
 	Local nMM as numeric
 
@@ -467,3 +467,49 @@ User Function VldHours( cHour )
 	EndIf
 
 Return .T.
+
+User Function CodToDef( aItens as array, nPos as integer, cAlias as character, cRet as character )
+
+	Local lRet := .T.
+	Local n1 as integer
+	Local n2 as integer
+	Local cQuery as character
+	Local cAliasQry as character
+	Local aCods := {}
+	Local aDefs := {}
+
+	// Captura todos os códigos diferentes presentes no array
+	For n1 := 1 to Len(aItens)
+		If aScan( aCods, aItens[n1,nPos] ) == 0
+			aAdd( aCods, aItens[n1,nPos] )
+		EndIf
+	Next n1
+
+	// Busca e armazena a definição de cada código
+	For n1 := 1 to Len(aCods)
+		cQuery := U_QuerySet( cAlias, { cRet }, { {  FormatStr("%c.%c_COD = ", cAlias, cAlias), aCods[n1]} } )
+		cAliasQry := MPSysOpenQuery(cQuery)
+
+		If !(cAliasQry)->(EoF())
+			aAdd( aDefs, (cAliasQry)->( FieldGet( FieldPos(cRet) ) ) )
+		Else
+			lRet := .F.
+			Help( , , " HELP", , "Código " + AllTrim(aCods[n1]) + " não existe na tabela " + cAlias, 1, 0 )
+			(cAliasQry)->(dbCloseArea())
+			exit
+		EndIf
+
+		(cAliasQry)->(dbCloseArea())
+	Next n1
+
+	// Substitui os códigos pelos valores correspondentes
+	If lRet
+		For n1 := 1 to Len(aItens)
+			n2 := aScan( aCods, aItens[n1,nPos] )
+			If n2 > 0
+				aItens[n1,nPos] := aDefs[n2]
+			EndIf
+		Next n1
+	EndIf
+
+Return lRet
