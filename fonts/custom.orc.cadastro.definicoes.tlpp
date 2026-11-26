@@ -51,8 +51,6 @@ User Function ModelDef()
 	oModel:SetPrimaryKey({'ZB2_FILIAL', 'ZB2_COD'})
 	oModel:GetModel('ZB2MASTER'):SetDescription('Modelo de Definições')
 
-	oModel:SetActivate({ |oModel| U_ModelActivate( @oModel, "ZB2" ) })
-
 Return oModel
 
 /*/{Protheus.doc} ViewDef

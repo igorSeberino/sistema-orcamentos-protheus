@@ -400,7 +400,7 @@ User Function GravaHist(  cAcao as character, cObs as character )
 
 		If cAcao == ACAO_APROVADO
 			ZB4->ZB4_USRAPR := cUser
-			ZB4->ZB4_DTAPR  := Date()
+			ZB4->ZB4_DTAPR  := dDataBase
 			ZB4->ZB4_HRAPR  := Left( Time(), 5 )
 		ElseIf cAcao == ACAO_ESTORNADO
 			ZB4->ZB4_USRAPR := ""
@@ -414,7 +414,7 @@ User Function GravaHist(  cAcao as character, cObs as character )
 		ZB7->ZB7_SEQ := cSeq
 		ZB7->ZB7_ACAO := cAcao
 		ZB7->ZB7_USER := cUser
-		ZB7->ZB7_DATA := Date()
+		ZB7->ZB7_DATA := dDataBase
 		ZB7->ZB7_HORA := Left( Time(), 5 )
 		ZB7->ZB7_OBS := cObs
 

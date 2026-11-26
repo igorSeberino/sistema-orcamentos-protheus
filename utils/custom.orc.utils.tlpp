@@ -4,45 +4,6 @@
 
 namespace custom.orc.utils
 
-/*/{Protheus.doc} ModelActivate
-	Ponto de ativacao do Model (SetActivate) do cadastro de Áreas (ZB1).
-	Executado ao ativar o formulario; na operacao de INCLUIR, gera o
-	codigo sequencial do produto (ZB1_COD) via GetSXENum, garantindo que
-	o codigo nao esteja em uso (checagem via CodExiste) antes de
-	gravar o valor no Model.
-
-	@type user function
-
-	@author igor.seberino
-
-	@since 22/10/2026
-
-	@param oModel
-
-	@see ZA1CodExiste
-/*/
-User Function ModelActivate( oModel as object, cAlias as character )
-
-	Local cCodigo
-	Local cCodField := cAlias + "_COD"
-	Local cModel := cAlias + "MASTER"
-
-	If oModel:GetOperation() == MODEL_OPERATION_INSERT
-
-		cCodigo := GetSXENum( cAlias, cCodField )
-
-		Do While U_CodExiste(cCodigo, cAlias)
-
-			cCodigo := GetSXENum( cAlias, cCodField )
-
-		EndDo
-
-		oModel:SetValue( cModel, cCodField, cCodigo )
-
-	EndIf
-
-Return
-
 /*/{Protheus.doc} CodExiste
 	Verifica se ja existe produto (nao deletado) com o codigo
 	informado.
@@ -391,7 +352,7 @@ User Function VldDefin( cDefin as character )
 	Local lRet := .T.
 
 	If (cAliasQry)->(EoF())
-		Help( , , " HELP", , "Definição não existe ou está inativa", 1, 0 )
+		Help( , , "HELP", , "Definição não existe ou está inativa", 1, 0 )
 		lRet := .F.
 	EndIf
 
@@ -418,7 +379,7 @@ User Function VldArea( cArea as character )
 	Local lRet := .T.
 
 	If (cAliasQry)->(EoF())
-		Help( , , " HELP", , "Área não existe ou está inativa", 1, 0 )
+		Help( , , "HELP", , "Área não existe ou está inativa", 1, 0 )
 		lRet := .F.
 	EndIf
 
@@ -445,10 +406,10 @@ User Function VldAprov( cUser as character )
 	Local lRet := .T.
 
 	If !UsrExist(cUser)
-		Help( , , " HELP", , "Usuário não existe", 1, 0 )
+		Help( , , "HELP", , "Usuário não existe", 1, 0 )
 		lRet := .F.
 	ElseIf !(cAliasQry)->(EoF())
-		Help( , , " HELP", , "Aprovador já cadastrado", 1, 0 )
+		Help( , , "HELP", , "Aprovador já cadastrado", 1, 0 )
 		lRet := .F.
 	EndIf
 
@@ -472,7 +433,7 @@ User Function VldHours( cHour as character )
 	nMM := Val( SubStr( cHour, nPos + 1 ) )
 
 	If nMM < 0 .Or. nMM > 59
-		Return (Help( , , " HELP", , "Valor de minutos inválido", 1, 0 ), .F.)
+		Return (Help( , , "HELP", , "Valor de minutos inválido", 1, 0 ), .F.)
 	EndIf
 
 Return .T.
@@ -503,7 +464,7 @@ User Function CodToDef( aItens as array, nPos as integer, cAlias as character, c
 			aAdd( aDefs, (cAliasQry)->( FieldGet( FieldPos(cRet) ) ) )
 		Else
 			lRet := .F.
-			Help( , , " HELP", , "Código " + AllTrim(aCods[n1]) + " não existe na tabela " + cAlias, 1, 0 )
+			Help( , , "HELP", , "Código " + AllTrim(aCods[n1]) + " não existe na tabela " + cAlias, 1, 0 )
 			(cAliasQry)->(dbCloseArea())
 			exit
 		EndIf

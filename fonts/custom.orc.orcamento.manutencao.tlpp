@@ -17,7 +17,7 @@ using namespace custom.orc.utils
 /*/
 User Function ZORCA04()
 
-	Local oBrowse := FWMarkBrowse():New()
+	Local oBrowse := FWMBrowse():New()
 
 	oBrowse:SetAlias("ZB4")
 	oBrowse:SetDescription("Orçamentos (browse e manutenção)")
@@ -168,14 +168,14 @@ User Function MenuDef()
 	ADD OPTION aRotina Title 'Alterar'            Action cActionString                   OPERATION 4 ACCESS 0
 	ADD OPTION aRotina Title 'Excluir'            Action cActionString                   OPERATION 5 ACCESS 0
 	ADD OPTION aRotina Title 'Copiar'             Action cActionString                   OPERATION 9 ACCESS 0
-	ADD OPTION aRotina Title 'Imprimir'           Action NZORCR01 + ".U_ZORCR01()"        OPERATION 3 ACCESS 0
-	ADD OPTION aRotina Title 'Enviar Rascunho'    Action NZORCA05 + ".U_ZORCA05( 'ENV' )" OPERATION 5 ACCESS 0
-	ADD OPTION aRotina Title 'Novo Rascunho'      Action NZORCA05 + ".U_ZORCA05( 'NOV' )" OPERATION 5 ACCESS 0
+	ADD OPTION aRotina Title 'Imprimir'           Action NZORCR01 + ".U_ZORCR01()"        OPERATION 8 ACCESS 0
+	ADD OPTION aRotina Title 'Enviar Rascunho'    Action NZORCA05 + ".U_ZORCA05( 'ENV' )" OPERATION 4 ACCESS 0
+	ADD OPTION aRotina Title 'Novo Rascunho'      Action NZORCA05 + ".U_ZORCA05( 'NOV' )" OPERATION 3 ACCESS 0
 	ADD OPTION aRotina Title 'Importar CSV'       Action NZORCA06 + ".U_ZORCA06()"        OPERATION 3 ACCESS 0
-	ADD OPTION aRotina Title 'Consulta Histórica' Action NZORCA07 + ".U_ZORCA07()"        OPERATION 3 ACCESS 0
+	ADD OPTION aRotina Title 'Consulta Histórica' Action NZORCA07 + ".U_ZORCA07()"        OPERATION 2 ACCESS 0
 	If U_VldAprovador()
-		ADD OPTION aRotina Title 'Aprovação'      Action NZORCA05 + ".U_ZORCA05( 'APR' )" OPERATION 5 ACCESS 0
-		ADD OPTION aRotina Title 'Estornar'       Action NZORCA05 + ".U_ZORCA05( 'EST' )" OPERATION 5 ACCESS 0
+		ADD OPTION aRotina Title 'Aprovação'      Action NZORCA05 + ".U_ZORCA05( 'APR' )" OPERATION 4 ACCESS 0
+		ADD OPTION aRotina Title 'Estornar'       Action NZORCA05 + ".U_ZORCA05( 'EST' )" OPERATION 4 ACCESS 0
 	EndIf
 
 Return aRotina
@@ -282,7 +282,7 @@ User Function VldHrs( cFieldDays as character , nHoras as numeric )
 	Local nDias     as numeric
 
 	If nHoras < 0
-		Help( , , "	HELP", , "Horas não podem ser negativas.", 1, 0 )
+		Help( , , "HELP", , "Horas não podem ser negativas.", 1, 0 )
 		Return .F.
 	EndIf
 
@@ -317,7 +317,7 @@ User Function VldDias( cFieldHrs as character, nDias as numeric ) as logical
 	Local lRet := .T.
 
 	If nDias < 0
-		Help( , , "	HELP", , "Dias não podem ser negativos.", 1, 0 )
+		Help( , , "HELP", , "Dias não podem ser negativos.", 1, 0 )
 		Return .F.
 	EndIf
 

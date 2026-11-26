@@ -51,8 +51,6 @@ User Function ModelDef()
 	oModel:SetPrimaryKey( {'ZB1_FILIAL', 'ZB1_COD'} )
 	oModel:GetModel( 'ZB1MASTER' ):SetDescription( 'Modelo de Áreas' )
 
-	oModel:SetActivate( { |oModel| U_ModelActivate( @oModel, "ZB1" ) } )
-
 Return oModel
 
 /*/{Protheus.doc} ViewDef
