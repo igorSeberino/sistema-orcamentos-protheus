@@ -3,7 +3,6 @@
 #include "custom.orc.th"
 
 namespace custom.orc.utils
-using namespace custom.orc.orcamento.manutencao
 
 /*/{Protheus.doc} ModelActivate
 	Ponto de ativacao do Model (SetActivate) do cadastro de Áreas (ZB1).
@@ -132,6 +131,7 @@ User Function QuerySet( cAlias as character, aParamsSelect as array, aParamsWher
 		// mesmo sem parâmetros de busca
 	Else
 		cQueryBase += " WHERE " + cAlias + ".D_E_L_E_T_ = ' ' "
+		cQueryBase += " AND " + cAlias + "_FILIAL = ? "
 	EndIf
 
 	oStmt:SetQuery(cQueryBase)
