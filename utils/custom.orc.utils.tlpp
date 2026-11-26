@@ -177,24 +177,25 @@ Return cQueryRet
 
 	@return numeric
 /*/
-User Function HoursToNum( cHour as character )
+User Function HoursToNum( cHour as character ) as numeric
 
-	Local nHH         as numeric
-	Local nMM         as numeric
-	Local nValue      as numeric
-	Local nHourLength as numeric
+	Local nPos as numeric
+	Local nHH  as numeric
+	Local nMM  as numeric
 
 	cHour := StrTran( AllTrim( cHour ), ".", "" )
-	nHourLength := Len(AllTrim(cHour)) - 3
+	nPos  := At( ":", cHour )
 
-	// Captura hora e minuto do campo
-	nHH := Val( Left( cHour, nHourLength ) )
-	nMM := Val( Right( cHour , 2 ) )
+	If nPos == 0
+		// Sem ":" = horas inteiras ("8" = 8:00)
+		nHH := Val( cHour )
+		nMM := 0
+	Else
+		nHH := Val( Left( cHour, nPos - 1 ) )
+		nMM := Val( SubStr( cHour, nPos + 1 ) )
+	EndIf
 
-	// Converte caracter para numérico
-	nValue := Round( nHH + ( nMM / 60 ), 2 )
-
-Return nValue
+Return Round( nHH + ( nMM / 60 ), 2 )
 
 /*/{Protheus.doc} NumToHours
 	Converte horas decimais em texto
@@ -457,10 +458,18 @@ Return lRet
 
 User Function VldHours( cHour as character )
 
-	Local nMM as numeric
+	Local nPos as numeric
+	Local nMM  as numeric
 
-	// Captura minuto do campo
-	nMM := Val( Right( AllTrim(cHour) , 2 ) )
+	cHour := AllTrim( cHour )
+	nPos  := At( ":", cHour )
+
+	// Sem ":" = horas inteiras, não há minuto para validar
+	If nPos == 0
+		Return .T.
+	EndIf
+
+	nMM := Val( SubStr( cHour, nPos + 1 ) )
 
 	If nMM < 0 .Or. nMM > 59
 		Return (Help( , , " HELP", , "Valor de minutos inválido", 1, 0 ), .F.)
