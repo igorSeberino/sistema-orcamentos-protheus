@@ -38,7 +38,7 @@ User Function ZORCA06()
 	EndIf
 
 	// Define campos pedidos ao usuário para inclusão em ZB4
-	{ /*nTipo, 1=Campo de Digitação(Get)*/, /*Texto na tela*/, /*Valor Inicial*/, /*Picture(Mask)*/, /*Validação*/, /*F3*/, /*When(Editável)*/, /*Largura*/, /*Obrigatório*/ }
+	/*nTipo (1=Campo de Digitação(Get)), Texto na tela, Valor Inicial, Picture(Mask), Validação, F3, When(Editável), Largura, Obrigatório*/ 
 	aAdd( aPergs, { 1, "Cliente"         , Space(TamSX3("ZB4_CLIENT")[1])   , ""        , "", "SA1", "", 50, .T. } )
 	aAdd( aPergs, { 1, "Loja"            , Space(TamSX3("ZB4_LOJA")[1])     , ""        , "", ""   , "", 20, .T. } )
 	aAdd( aPergs, { 1, "Título"          , Space(TamSX3("ZB4_TITULO")[1])   , ""        , "", ""   , "", 90, .T. } )
@@ -49,6 +49,7 @@ User Function ZORCA06()
 
 	// Tenta abrir uma janela para preenchimento de campos da ZB4
 	If !ParamBox( aPergs, "Importação de orçamento", @aRet, , , , , , , , .F. )
+		oFile:Close()
 		Return
 	EndIf
 
@@ -87,6 +88,7 @@ User Function Importar( cPath as character, aRet as array, oFile as object )
 
 	If !oModel:Activate()
 		Help( , , "ZORCA06", , "Ocorreu um erro inesperado.", 1, 0 )
+		oFile:Close()
 		Return
 	EndIf
 
@@ -207,7 +209,7 @@ Return
 	
     @return logical, .T. se o valor foi aceito
 /*/
-User Function SetCampo( oModel as object, cSubModel, cCampo, xValor, nLinha, aLog )
+User Function SetCampo( oModel as object, cSubModel as character, cCampo as character, xValor, nLinha as numeric, aLog as array )
 
 	If !(oModel:SetValue( cSubModel, cCampo, xValor ))
 		aAdd( aLog, U_TxtLinha(nLinha) + AllTrim(cCampo) + " - " + U_ErroModel(oModel) )
