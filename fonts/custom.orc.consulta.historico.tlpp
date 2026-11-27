@@ -42,8 +42,9 @@ User Function ZORCA07( cDef as character )
 	Local oFont := TFont():New("Arial", , -12) as object
 
 	Local aButtons := {;
-		{ , "Visualizar Orçamento", { || Visualizar( aDetalhe, oBrowseDet ) }, , 1, .T., .F. }, ;
-		{ , "Exportar Excel", { || ExportExcel( aResumo, aDetTodos, cDef, cArea, cCli, dDateIni, dDateFin, lAprov ) }, , 2, .T., .F. } ;
+		{ , "Visualizar Cliente"  , { || ViewCliente( aDetalhe, oBrowseDet ) }           , , 1, .T., .F. }, ;
+		{ , "Visualizar Orçamento", { || Visualizar( aDetalhe, oBrowseDet ) }, , 2, .T., .F. }, ;
+		{ , "Exportar Excel", { || ExportExcel( aResumo, aDetTodos, cDef, cArea, cCli, dDateIni, dDateFin, lAprov ) }, , 3, .T., .F. } ;
 		} as array
 
 	If Empty(cDef)
@@ -788,3 +789,26 @@ Static Function VldPeriodo( dIni as date, dFin as date ) as logical
 	EndIf
 
 Return lOk
+
+/*/{Protheus.doc} nomeStaticFunction
+	(long_description)
+	@type  Static Function
+	@author user
+	@since 27/11/2026
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see (links_or_references)
+/*/
+Static Function ViewCliente( aDetalhe as array, oBrowseDet as object )
+
+	Local aArea := GetArea() as array
+	Local aCliente := StrTokArr2( aDetalhe[oBrowseDet:At(), 2], "/", .T. )
+
+	U_ViewCliente( aCliente[1], aCliente[2] )
+
+	RestArea( aArea )
+	
+Return 

@@ -141,7 +141,7 @@ User Function ViewDef() as object
 	oView:SetAfterViewActivate( { |oView| HideHist( oView ) } )
 
 	oView:AddUserButton( "Atividades Similares", "", { |oView| AtivSimilares( oView ) }, "Consulta histórica pela definição do item", , { MODEL_OPERATION_VIEW, MODEL_OPERATION_UPDATE } )
-	oView:AddUserButton( "Visualizar Cliente", "", { |oView| ViewCliente( oView ) }, "Consulta histórica pela definição do item", , { MODEL_OPERATION_VIEW, MODEL_OPERATION_UPDATE } )
+	oView:AddUserButton( "Visualizar Cliente", "", { |oView| U_ViewCliente( oView:GetModel():GetValue("ZB4MASTER", "ZB4_CLIENT"), oView:GetModel():GetValue("ZB4MASTER", "ZB4_LOJA") ) }, "Consulta histórica pela definição do item", , { MODEL_OPERATION_VIEW, MODEL_OPERATION_UPDATE } )
 
 Return oView
 
@@ -167,6 +167,7 @@ User Function MenuDef() as array
 	ADD OPTION aRotina Title 'Alterar'            Action cActionString                   OPERATION 4 ACCESS 0
 	ADD OPTION aRotina Title 'Excluir'            Action cActionString                   OPERATION 5 ACCESS 0
 	ADD OPTION aRotina Title 'Copiar'             Action cActionString                   OPERATION 9 ACCESS 0
+	ADD OPTION aRotina Title 'Visualizar Cliente' Action NUTILS + ".U_ViewCliente( ZB4->ZB4_CLIENT, ZB4->ZB4_LOJA )" OPERATION 2 ACCESS 0
 	ADD OPTION aRotina Title 'Imprimir'           Action NZORCR01 + ".U_ZORCR01()"        OPERATION 8 ACCESS 0
 	ADD OPTION aRotina Title 'Enviar Rascunho'    Action NZORCA05 + ".U_ZORCA05( 'ENV' )" OPERATION 4 ACCESS 0
 	ADD OPTION aRotina Title 'Novo Rascunho'      Action NZORCA05 + ".U_ZORCA05( 'NOV' )" OPERATION 3 ACCESS 0
@@ -647,24 +648,5 @@ Static Function AtivSimilares( oView as object )
 	Local cDef   := oModel:GetValue( "ZB5_DEFIN" ) as character
 
 	custom.orc.consulta.historico.U_ZORCA07( cDef )
-
-Return
-
-Static Function ViewCliente( oView as object )
-
-	Local aArea := GetArea()
-	Local aAreaSA1 := SA1->(GetArea())
-	Local oModel := oView:GetModel()
-	Local cChave := xFilial("SA1") + oModel:GetValue("ZB4MASTER", "ZB4_CLIENT") + oModel:GetValue("ZB4MASTER", "ZB4_LOJA")
-
-	SA1->( DbSetOrder(1) )
-	If SA1->( DbSeek( cChave ) )
-		FwExecView( "Visualizar Cliente", "CRMA980", MODEL_OPERATION_VIEW, , { || .T. } )
-	Else
-		Help( , , "ZORCA04", , "Cliente não encontrado.", 1, 0, , , , , , { "Verifique o código e a loja do cliente." } )
-	EndIf
-
-	SA1->( RestArea( aAreaSA1 ) )
-	RestArea( aArea )
 
 Return

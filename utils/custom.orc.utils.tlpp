@@ -535,3 +535,33 @@ User Function VldHours( cHour as character ) as logical
 	EndIf
 
 Return lRet
+
+/*/{Protheus.doc} ViewCliente
+	Executa a visualização do cliente
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 27/11/2026
+
+	@param cCod, character, Código do cliente
+	@param cLoja, character, Loja do cliente
+/*/
+User Function ViewCliente( cCod as character, cLoja as character )
+
+	Local aArea := GetArea()
+	Local aAreaSA1 := SA1->(GetArea())
+	Local cChave := xFilial("SA1") + cCod + cLoja
+
+	SA1->( DbSetOrder(1) )
+	If SA1->( DbSeek( cChave ) )
+		FwExecView( "Visualizar Cliente", "CRMA980", MODEL_OPERATION_VIEW, , { || .T. } )
+	Else
+		Help( , , "ZORCA04", , "Cliente não encontrado.", 1, 0, , , , , , { "Verifique o código e a loja do cliente." } )
+	EndIf
+
+	SA1->( RestArea( aAreaSA1 ) )
+	RestArea( aArea )
+
+Return
