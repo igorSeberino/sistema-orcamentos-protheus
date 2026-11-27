@@ -141,7 +141,7 @@ User Function ViewDef() as object
 	oView:SetAfterViewActivate( { |oView| HideHist( oView ) } )
 
 	oView:AddUserButton( "Atividades Similares", "", { |oView| AtivSimilares( oView ) }, "Consulta histórica pela definição do item", , { MODEL_OPERATION_VIEW, MODEL_OPERATION_UPDATE } )
-	oView:AddUserButton( "Visualizar Cliente", "", { |oView| U_ViewCliente( oView:GetModel():GetValue("ZB4MASTER", "ZB4_CLIENT"), oView:GetModel():GetValue("ZB4MASTER", "ZB4_LOJA") ) }, "Consulta histórica pela definição do item", , { MODEL_OPERATION_VIEW, MODEL_OPERATION_UPDATE } )
+	oView:AddUserButton( "Visualizar Cliente", "", { |oView| U_ViewCliente( oView:GetModel():GetValue("ZB4MASTER", "ZB4_CLIENT"), oView:GetModel():GetValue("ZB4MASTER", "ZB4_LOJA") ) }, "Visualizar cliente do orçamento" )
 
 Return oView
 

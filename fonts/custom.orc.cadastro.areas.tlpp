@@ -41,14 +41,29 @@ Return
 /*/
 User Function ModelDef() as object
 
-	Local oModel   := MPFormModel():New("ZORCA01M", /*bPre*/, { |oModel| VldExclusao(oModel) }) as object
-	Local oStruZB1 := FWFormStruct( 1, "ZB1" ) as object
+	Local oModel    := MPFormModel():New("ZORCA01M", /*bPre*/, { |oModel| VldExclusao(oModel) }) as object
+	Local oStruZB1  := FWFormStruct( 1, "ZB1" ) as object
+	Local oStruZB5  := FWFormStruct( 1, "ZB5" ) as object
 
-	oModel:AddFields("ZB1MASTER", /*cOwner*/, oStruZB1)
+	oModel:AddFields( "ZB1MASTER", /*cOwner*/, oStruZB1 )
+	oModel:AddGrid(   "ZB5DETAIL", "ZB1MASTER", oStruZB5 )
+
 	oModel:SetDescription( 'Modelo de Áreas' )
 
+	oModel:SetRelation( "ZB5DETAIL", {;
+		{ "ZB5_FILIAL", "xFilial('ZB5')" }, ;
+		{ "ZB5_AREA",   "ZB1_COD" } ;
+		}, ZB5->(IndexKey(3)) )
+
 	oModel:SetPrimaryKey( {'ZB1_FILIAL', 'ZB1_COD'} )
+
 	oModel:GetModel( 'ZB1MASTER' ):SetDescription( 'Modelo de Áreas' )
+
+	oModel:GetModel( 'ZB5DETAIL' ):SetOnlyQuery(    .T. )
+	oModel:GetModel(  'ZB5DETAIL' ):SetOptional(     .T. )
+	oModel:GetModel(  'ZB5DETAIL' ):SetNoInsertLine( .T. )
+	oModel:GetModel(  'ZB5DETAIL' ):SetNoUpdateLine( .T. )
+	oModel:GetModel(  'ZB5DETAIL' ):SetNoDeleteLine( .T. )
 
 Return oModel
 
@@ -65,15 +80,34 @@ Return oModel
 /*/
 User Function ViewDef() as object
 
-	Local oModel   := FWLoadModel( NZORCA01 + ".ZORCA01" ) as object
-	Local oStruZB1 := FWFormStruct( 2, "ZB1" ) as object
-	Local oView    := FWFormView():New() as object
+	Local oModel    := FWLoadModel( NZORCA01 + ".ZORCA01" ) as object
+	Local oStruZB1  := FWFormStruct( 2, "ZB1" ) as object
+	Local oStruZB5  := FWFormStruct( 2, "ZB5" ) as object
+	Local oView     := FWFormView():New() as object
 
 	oView:SetModel( oModel )
 	oView:AddField( 'VIEW_ZB1', oStruZB1, 'ZB1MASTER' )
+	oView:AddGrid(  'VIEW_ZB5', oStruZB5, 'ZB5DETAIL' )
+	
+	oStruZB5:RemoveField("ZB5_COD")
+	oStruZB5:RemoveField("ZB5_REV")
+	oStruZB5:RemoveField("ZB5_TTHRNM")
+	oStruZB5:RemoveField("ZB5_AREA")
+	oStruZB5:RemoveField("ZB5_DESARE")
+	oStruZB5:RemoveField("ZB5_DEF")
 
-	oView:CreateHorizontalBox( 'TELA', 100 )
-	oView:SetOwnerView( 'VIEW_ZB1', 'TELA' )
+	oView:CreateHorizontalBox( 'AREA', 20 )
+	oView:CreateHorizontalBox( 'ITEM', 80 )
+
+	oView:CreateFolder( 'FOLDER', 'ITEM' )
+	oView:AddSheet( 'FOLDER', 'ITENS', 'Itens' )
+
+	oView:CreateHorizontalBox( 'BOX_ZB5', 100, , ,  'FOLDER', 'ITENS' )
+
+	oView:SetOwnerView( 'VIEW_ZB1', 'AREA' )
+	oView:SetOwnerView( 'VIEW_ZB5', 'BOX_ZB5' )
+
+	oView:AddUserButton( "Visualizar orçamento", "", { |oView| ViewOrcamento(oView) }, "Visualiza o orçamento do item" )
 
 Return oView
 
@@ -153,3 +187,42 @@ Static Function VldExclusao( oModel as object ) as logical
 	EndIf
 
 Return lRet
+
+/*/{Protheus.doc} ViewOrcamento
+	Botão "Atividades Similares": abre a consulta histórica
+	(ZORCA07) filtrada pela definição do item posicionado
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 18/11/2026
+
+	@param oView, object, View ativa
+/*/
+Static Function ViewOrcamento( oView as object )
+
+	Local aArea  := GetArea() as array
+	Local oModel := oView:GetModel():GetModel( "ZB5DETAIL" ) as object
+	Local cCod   as character
+	Local cRev   as character
+	Local cChave as character
+
+	If Empty(oModel)
+		Help(, , "ZORCA01", , "Sem orçamento para visualizar.", 1, 0 )
+		Return
+	EndIf
+
+	cCod   := oModel:GetValue( "ZB5_COD" )
+	cRev   := oModel:GetValue( "ZB5_REV" )
+	cChave := FWxFilial("ZB5") + cCod + cRev
+
+	DbSelectArea("ZB4")
+	ZB4->(DbSetOrder(1))
+	ZB4->(DbSeek(cChave))
+
+	FWExecView("Visualizar", FormatStr("VIEWDEF.%c.ZORCA04", NZORCA04), MODEL_OPERATION_VIEW)
+
+	RestArea(aArea)
+
+Return
