@@ -141,6 +141,7 @@ User Function ViewDef() as object
 	oView:SetAfterViewActivate( { |oView| HideHist( oView ) } )
 
 	oView:AddUserButton( "Atividades Similares", "", { |oView| AtivSimilares( oView ) }, "Consulta histórica pela definição do item", , { MODEL_OPERATION_VIEW, MODEL_OPERATION_UPDATE } )
+	oView:AddUserButton( "Visualizar Cliente", "", { |oView| ViewCliente( oView ) }, "Consulta histórica pela definição do item", , { MODEL_OPERATION_VIEW, MODEL_OPERATION_UPDATE } )
 
 Return oView
 
@@ -646,5 +647,24 @@ Static Function AtivSimilares( oView as object )
 	Local cDef   := oModel:GetValue( "ZB5_DEFIN" ) as character
 
 	custom.orc.consulta.historico.U_ZORCA07( cDef )
+
+Return
+
+Static Function ViewCliente( oView as object )
+
+	Local aArea := GetArea()
+	Local aAreaSA1 := SA1->(GetArea())
+	Local oModel := oView:GetModel()
+	Local cChave := xFilial("SA1") + oModel:GetValue("ZB4MASTER", "ZB4_CLIENT") + oModel:GetValue("ZB4MASTER", "ZB4_LOJA")
+
+	SA1->( DbSetOrder(1) )
+	If SA1->( DbSeek( cChave ) )
+		FwExecView( "Visualizar Cliente", "CRMA980", MODEL_OPERATION_VIEW, , { || .T. } )
+	Else
+		Help( , , "ZORCA04", , "Cliente não encontrado.", 1, 0, , , , , , { "Verifique o código e a loja do cliente." } )
+	EndIf
+
+	SA1->( RestArea( aAreaSA1 ) )
+	RestArea( aArea )
 
 Return

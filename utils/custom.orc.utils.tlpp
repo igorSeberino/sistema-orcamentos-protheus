@@ -43,7 +43,7 @@ Return lExiste
 
 	@return logical, .T. se é aprovador ativo
 /*/
-User Function EhAprovador( cUser as character ) as logical
+User Function IsAprovador( cUser as character ) as logical
 Return U_RegEmUso( "ZB3", { { "ZB3.ZB3_USER = ", cUser }, { "ZB3.ZB3_ATIVO = ", ATIVO_SIM } } )
 
 /*/{Protheus.doc} ExcOuInativa
