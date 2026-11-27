@@ -20,6 +20,7 @@ User Function ZORCA04()
 	Local oBrowse := FWMBrowse():New() as object
 	Local cFiltro := "@R_E_C_N_O_ IN ( SELECT ZB4B.R_E_C_N_O_ FROM " + RetSqlName("ZB4") + " ZB4B" + ;
 		" WHERE ZB4B.D_E_L_E_T_ = ' '" + ;
+		" AND ZB4B.ZB4_FILIAL = '" + FWxFilial("ZB4") + "'" + ;
 		" AND NOT EXISTS ( SELECT 1 FROM " + RetSqlName("ZB4") + " ZB4C" + ;
 		" WHERE ZB4C.ZB4_FILIAL = ZB4B.ZB4_FILIAL" + ;
 		" AND ZB4C.ZB4_COD = ZB4B.ZB4_COD" + ;

@@ -293,6 +293,7 @@ Static Function Filtros( cDef as character, cArea as character, cCli as characte
 	cFiltro += "                     SUM(ZB6_HANANM) HANA, SUM(ZB6_HVALNM) HVAL "
 	cFiltro += "                FROM " + RetSQLName("ZB6")
 	cFiltro += "               WHERE D_E_L_E_T_ = ' ' "
+	cFiltro += "                 AND ZB6_FILIAL = ? "
 	cFiltro += "               GROUP BY ZB6_FILIAL, ZB6_COD, ZB6_REV, ZB6_ITEM ) ZB6T "
 	cFiltro += "    ON ZB6T.ZB6_FILIAL = ZB5.ZB5_FILIAL "
 	cFiltro += "   AND ZB6T.ZB6_COD    = ZB5.ZB5_COD "
@@ -303,6 +304,7 @@ Static Function Filtros( cDef as character, cArea as character, cCli as characte
 	cFiltro += "   AND ZB5.ZB5_FILIAL = ? "
 
 	aAdd( aParams, xFilial("ZB2") )
+	aAdd( aParams, xFilial("ZB6") )
 	aAdd( aParams, xFilial("ZB5") )
 
 	If !Empty( cDef )
@@ -773,5 +775,5 @@ Static Function ViewCliente( aDetalhe as array, oBrowseDet as object )
 	U_ViewCliente( aCliente[1], aCliente[2] )
 
 	RestArea( aArea )
-	
-Return 
+
+Return

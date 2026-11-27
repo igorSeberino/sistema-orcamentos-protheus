@@ -53,7 +53,7 @@ User Function ModelDef() as object
 	oModel:SetRelation( "ZB5DETAIL", {;
 		{ "ZB5_FILIAL", "xFilial('ZB5')" }, ;
 		{ "ZB5_DEFIN",   "ZB2_COD" } ;
-		}, ZB5->(IndexKey(3)) )
+		}, ZB5->(IndexKey(2)) )
 
 	oModel:SetDescription('Modelo de Definições')
 
