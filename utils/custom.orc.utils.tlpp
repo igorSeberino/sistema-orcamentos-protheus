@@ -565,3 +565,43 @@ User Function ViewCliente( cCod as character, cLoja as character )
 	RestArea( aArea )
 
 Return
+
+/*/{Protheus.doc} ViewOrcamento
+	Botão "Visualizar orçamento": abre o orçamento
+	(ZORCA01-2) filtrada pelo orçamento do item posicionado
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 18/11/2026
+
+	@param oView, object, View ativa
+/*/
+User Function ViewOrcamento( oView as object )
+
+	Local aArea  := GetArea() as array
+	Local oModel := oView:GetModel():GetModel( "ZB5DETAIL" ) as object
+	Local cCod   as character
+	Local cRev   as character
+	Local cChave as character
+
+	If Empty(oModel)
+		Help(, , "HELP", , "Sem orçamento para visualizar.", 1, 0 )
+		Return
+	EndIf
+
+	cCod   := oModel:GetValue( "ZB5_COD" )
+	cRev   := oModel:GetValue( "ZB5_REV" )
+	cChave := FWxFilial("ZB5") + cCod + cRev
+
+	DbSelectArea("ZB4")
+	ZB4->(DbSetOrder(1))
+	ZB4->(DbSeek(cChave))
+
+	FWExecView("Visualizar", FormatStr("VIEWDEF.%c.ZORCA04", NZORCA04), MODEL_OPERATION_VIEW)
+
+	RestArea(aArea)
+
+Return
+

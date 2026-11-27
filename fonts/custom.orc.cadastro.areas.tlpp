@@ -107,7 +107,7 @@ User Function ViewDef() as object
 	oView:SetOwnerView( 'VIEW_ZB1', 'AREA' )
 	oView:SetOwnerView( 'VIEW_ZB5', 'BOX_ZB5' )
 
-	oView:AddUserButton( "Visualizar orçamento", "", { |oView| ViewOrcamento(oView) }, "Visualiza o orçamento do item" )
+	oView:AddUserButton( "Visualizar orçamento", "", { |oView| U_ViewOrcamento(oView) }, "Visualiza o orçamento do item" )
 
 Return oView
 
@@ -187,42 +187,3 @@ Static Function VldExclusao( oModel as object ) as logical
 	EndIf
 
 Return lRet
-
-/*/{Protheus.doc} ViewOrcamento
-	Botão "Atividades Similares": abre a consulta histórica
-	(ZORCA07) filtrada pela definição do item posicionado
-
-	@type static function
-
-	@author igor.seberino
-
-	@since 18/11/2026
-
-	@param oView, object, View ativa
-/*/
-Static Function ViewOrcamento( oView as object )
-
-	Local aArea  := GetArea() as array
-	Local oModel := oView:GetModel():GetModel( "ZB5DETAIL" ) as object
-	Local cCod   as character
-	Local cRev   as character
-	Local cChave as character
-
-	If Empty(oModel)
-		Help(, , "ZORCA01", , "Sem orçamento para visualizar.", 1, 0 )
-		Return
-	EndIf
-
-	cCod   := oModel:GetValue( "ZB5_COD" )
-	cRev   := oModel:GetValue( "ZB5_REV" )
-	cChave := FWxFilial("ZB5") + cCod + cRev
-
-	DbSelectArea("ZB4")
-	ZB4->(DbSetOrder(1))
-	ZB4->(DbSeek(cChave))
-
-	FWExecView("Visualizar", FormatStr("VIEWDEF.%c.ZORCA04", NZORCA04), MODEL_OPERATION_VIEW)
-
-	RestArea(aArea)
-
-Return
