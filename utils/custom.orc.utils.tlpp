@@ -30,7 +30,7 @@ User Function RegEmUso( cAlias as character, aWhere as array ) as logical
 
 Return lExiste
 
-/*/{Protheus.doc} EhAprovador
+/*/{Protheus.doc} IsAprovador
 	Verifica se o usuário está cadastrado como aprovador ativo (ZB3).
 
 	@type user function
@@ -605,6 +605,18 @@ User Function ViewOrcamento( oView as object )
 
 Return
 
+/*/{Protheus.doc} CriaFiltroAprov
+	Cria o checkbox "Apenas aprovados" no painel da view (ZORCA01-2)
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 27/11/2026
+
+	@param oPanel, object, Painel onde o checkbox é criado
+	@param oView, object, View ativa
+/*/
 User Function CriaFiltroAprov( oPanel as object, oView as object )
 
 	Local lSoAprov := .F. as logical
@@ -616,6 +628,19 @@ User Function CriaFiltroAprov( oPanel as object, oView as object )
 
 Return
 
+/*/{Protheus.doc} FiltraAprovados
+	Filtra os itens (ZB5) para mostrar só os de orçamentos aprovados
+	e reativa o modelo para recarregar o grid
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 27/11/2026
+
+	@param oView, object, View ativa
+	@param lSoAprov, logical, .T. filtra só os aprovados; .F. remove o filtro
+/*/
 User Function FiltraAprovados( oView as object, lSoAprov as logical )
 
 	Local   oModel     := oView:GetModel() as object
@@ -677,6 +702,18 @@ User Function NovaCol( cTitulo as character, bDado as codeblock, cTipo as charac
 
 Return oCol
 
+/*/{Protheus.doc} VisualizaRevisoes
+	Botão "Visualizar revisões": lista as revisões do orçamento com status,
+	data, cliente, total de horas e a última observação de reprovação/estorno
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 27/11/2026
+
+	@param cCod, character, Código do orçamento
+/*/
 User Function VisualizaRevisoes( cCod as character )
 
 	Local aAreaZB4   := ZB4->( GetArea() ) as array
@@ -734,6 +771,19 @@ User Function VisualizaRevisoes( cCod as character )
 
 Return
 
+/*/{Protheus.doc} CarregaRevs
+	Carrega as revisões do orçamento (ZB4), da mais recente para a mais antiga
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 27/11/2026
+
+	@param cCod, character, Código do orçamento
+
+	@return array, { Revisão, Status, Data, Cliente, Total Horas, Observação }
+/*/
 Static Function CarregaRevs( cCod as character ) as array
 
 	Local cQuery := U_QuerySet( "ZB4", { "ZB4_REV", "ZB4_STATUS", "ZB4_DATA", "ZB4_CLIENT", "ZB4_LOJA", "ZB4_TTHRNM" }, { { "ZB4_COD = ", cCod } } ) as character
@@ -754,6 +804,20 @@ Static Function CarregaRevs( cCod as character ) as array
 
 Return aRevs
 
+/*/{Protheus.doc} UltimaObs
+	Busca no histórico (ZB7) a observação da última reprovação ou estorno da revisão
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 27/11/2026
+
+	@param cCod, character, Código do orçamento
+	@param cRev, character, Revisão
+
+	@return character, Observação, ou vazio se não houver
+/*/
 Static Function UltimaObs( cCod as character, cRev as character ) as character
 
 	Local cQuery := U_QuerySet( "ZB7", { "ZB7_SEQ", "ZB7_ACAO", "ZB7_OBS" }, { { "ZB7_COD = ", cCod }, { "ZB7_REV = ", cRev } } ) as character
@@ -772,6 +836,18 @@ Static Function UltimaObs( cCod as character, cRev as character ) as character
 
 Return cObs
 
+/*/{Protheus.doc} VisualizaRev
+	Posiciona na revisão selecionada e abre o ZORCA04 em visualização
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 27/11/2026
+
+	@param cCod, character, Código do orçamento
+	@param cRev, character, Revisão
+/*/
 Static Function VisualizaRev( cCod as character, cRev as character )
 
 	ZB4->( DbSetOrder(1) )

@@ -753,17 +753,17 @@ Static Function VldPeriodo( dIni as date, dFin as date ) as logical
 
 Return lOk
 
-/*/{Protheus.doc} nomeStaticFunction
-	(long_description)
-	@type  Static Function
-	@author user
+/*/{Protheus.doc} ViewCliente
+	Abre a visualização do cliente da linha selecionada no detalhe
+
+	@type static function
+
+	@author igor.seberino
+
 	@since 27/11/2026
-	@version version
-	@param param_name, param_type, param_descr
-	@return return_var, return_type, return_description
-	@example
-	(examples)
-	@see (links_or_references)
+
+	@param aDetalhe, array, Detalhe filtrado
+	@param oBrowseDet, object, Browse de detalhe
 /*/
 Static Function ViewCliente( aDetalhe as array, oBrowseDet as object )
 
