@@ -639,3 +639,144 @@ User Function FiltraAprovados( oView as object, lSoAprov as logical )
 	oView:Refresh()
 
 Return
+
+/*/{Protheus.doc} NovaCol
+	Monta as colunas dos browses
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 16/11/2026
+
+	@param cTitulo, character, Título da coluna
+	@param bDado, codeblock, Bloco que retorna o valor da célula
+	@param cTipo, character, Tipo do dado (C, N, D)
+	@param nTam, numeric, Tamanho
+	@param nDec, numeric, Decimais
+	@param cPict, character, Picture
+	@param nAlign, numeric, Alinhamento (opcional, CONTROL_ALIGN_*)
+
+	@return object, Coluna criada (FWBrwColumn)
+/*/
+User Function NovaCol( cTitulo as character, bDado as codeblock, cTipo as character, nTam as numeric, nDec as numeric, cPict as character, nAlign as numeric ) as object
+
+	Local oCol := FWBrwColumn():New() as object
+
+	oCol:SetTitle( cTitulo )
+	oCol:SetData( bDado )
+	oCol:SetType( cTipo )
+	oCol:SetSize( nTam )
+	oCol:SetDecimal( nDec )
+	oCol:SetPicture( cPict )
+
+	If !Empty(nAlign)
+		oCol:SetAlign( nAlign )
+	EndIf
+
+
+Return oCol
+
+User Function VisualizaRevisoes( cCod as character )
+
+	Local aAreaZB4   := ZB4->( GetArea() ) as array
+	Local aRevs      := CarregaRevs( cCod ) as array
+	Local oModal     as object
+	Local oPanel     as object
+	Local oPanelBrw  as object
+	Local oBrowse    as object
+	Local oMemo      as object
+	Local cObs       := "" as character
+	Local oFontTitle := TFont():New("Arial", , -20, , .T.) as object
+	Local oFontSubt  := TFont():New("Arial", , -16, , .T.) as object
+
+	If Len( aRevs ) <= 1
+		Help( , , "HELP", , "O orçamento não possui outras revisões.", 1, 0 )
+		RestArea( aAreaZB4 )
+		Return
+	EndIf
+
+	oModal := FWDialogModal():New()
+	oModal:SetEscClose(.T.)
+	oModal:SetSize( 260, 450 ) // altura, largura
+	oModal:CreateDialog()
+	oPanel := oModal:GetPanelMain()
+
+	TSay():New( 010, 010, { || "Revisões do orçamento " + cCod }, oPanel, , oFontTitle, , , , .T., , , 300, 012 )
+	TPanel():New( 025, 010, , oPanel, , , , , CLR_GRAY, 430, 1 )
+
+	// Memo criado antes do browse: o SetChange dispara na ativação
+	TSay():New( 150, 010, { || "Observação (reprovação/estorno)" }, oPanel, , oFontSubt, , , , .T., , , 200, 012 )
+	oMemo := TMultiGet():New( 162, 010, { |u| If( PCount() > 0, cObs := u, cObs ) }, oPanel, 430, 050, , , , , , .T. )
+	oMemo:lReadOnly := .T.
+
+	oPanelBrw := TPanel():New( 032, 010, , oPanel, , , , , , 430, 110 )
+	oBrowse := FWBrowse():New( oPanelBrw )
+	oBrowse:SetDataArray()
+	oBrowse:SetArray( aRevs )
+	oBrowse:DisableConfig()
+	oBrowse:DisableReport()
+	oBrowse:SetColumns( { ;
+		U_NovaCol( "Revisão",     { || aRevs[oBrowse:At(), 1] }, "C", 4,  0, "@!" ), ;
+		U_NovaCol( "Status",      { || aRevs[oBrowse:At(), 2] }, "C", 12, 0, "" ), ;
+		U_NovaCol( "Data",        { || aRevs[oBrowse:At(), 3] }, "D", 8,  0, "" ), ;
+		U_NovaCol( "Cliente",     { || aRevs[oBrowse:At(), 4] }, "C", 40, 0, "" ), ;
+		U_NovaCol( "Total Horas", { || aRevs[oBrowse:At(), 5] }, "C", 10, 0, "", CONTROL_ALIGN_RIGHT ) } )
+	oBrowse:SetChange( { || cObs := aRevs[oBrowse:At(), 6], oMemo:Refresh() } )
+	oBrowse:Activate()
+
+	oModal:AddButtons( { { , "Visualizar Orçamento", { || VisualizaRev( cCod, aRevs[oBrowse:At(), 1] ) }, , 1, .T., .F. } } )
+	oModal:AddCloseButton( Nil, "Fechar" )
+
+	oModal:Activate()
+
+	RestArea( aAreaZB4 )
+
+Return
+
+Static Function CarregaRevs( cCod as character ) as array
+
+	Local cQuery := U_QuerySet( "ZB4", { "ZB4_REV", "ZB4_STATUS", "ZB4_DATA", "ZB4_CLIENT", "ZB4_LOJA", "ZB4_TTHRNM" }, { { "ZB4_COD = ", cCod } } ) as character
+	Local cAlias := MPSysOpenQuery( cQuery + " ORDER BY ZB4_REV DESC" ) as character
+	Local aRevs  := {} as array
+
+	While (cAlias)->( !EoF() )
+		aAdd( aRevs, { ;
+			(cAlias)->ZB4_REV, ;
+			X3Combo( "ZB4_STATUS", (cAlias)->ZB4_STATUS ), ;
+			StoD( (cAlias)->ZB4_DATA ), ;
+			(cAlias)->ZB4_CLIENT + "/" + (cAlias)->ZB4_LOJA + " - " + AllTrim( Posicione( "SA1", 1, FWxFilial("SA1") + (cAlias)->ZB4_CLIENT + (cAlias)->ZB4_LOJA, "A1_NOME" ) ), ;
+			U_NumToHours( ((cAlias)->ZB4_TTHRNM) ), ;
+			UltimaObs( cCod, (cAlias)->ZB4_REV ) } )
+		(cAlias)->( DbSkip() )
+	EndDo
+	(cAlias)->( DbCloseArea() )
+
+Return aRevs
+
+Static Function UltimaObs( cCod as character, cRev as character ) as character
+
+	Local cQuery := U_QuerySet( "ZB7", { "ZB7_SEQ", "ZB7_ACAO", "ZB7_OBS" }, { { "ZB7_COD = ", cCod }, { "ZB7_REV = ", cRev } } ) as character
+	Local cAlias := MPSysOpenQuery( cQuery + " ORDER BY ZB7_SEQ DESC" ) as character
+	Local cObs   := "" as character
+
+	// Última reprovação ou estorno da revisão
+	While (cAlias)->( !EoF() )
+		If (cAlias)->ZB7_ACAO == ACAO_REPROVADO .Or. (cAlias)->ZB7_ACAO == ACAO_ESTORNADO
+			cObs := AllTrim( (cAlias)->ZB7_OBS )
+			Exit
+		EndIf
+		(cAlias)->( DbSkip() )
+	EndDo
+	(cAlias)->( DbCloseArea() )
+
+Return cObs
+
+Static Function VisualizaRev( cCod as character, cRev as character )
+
+	ZB4->( DbSetOrder(1) )
+	If ZB4->( DbSeek( FWxFilial("ZB4") + cCod + cRev ) )
+		FWExecView( "Visualizar", FormatStr("VIEWDEF.%c.ZORCA04", NZORCA04), MODEL_OPERATION_VIEW )
+	EndIf
+
+Return

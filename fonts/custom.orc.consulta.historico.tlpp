@@ -132,15 +132,15 @@ Static Function Resumo( oPanel as object, aResumo as array, bChange as codeblock
 	oBrowseRes:DisableConfig()
 	oBrowseRes:DisableReport()
 	oBrowseRes:SetColumns( { ;
-		NovaCol( "Definição", { || aResumo[oBrowseRes:At(), 1] }, "C", 30, 0, "@!" ), ;
-		NovaCol( "Itens",     { || aResumo[oBrowseRes:At(), 2] }, "N", 5,  0, "@E 99999" ), ;
-		NovaCol( "Média",     { || aResumo[oBrowseRes:At(), 3] }, "C", 10, 2, "", CONTROL_ALIGN_RIGHT ), ;
-		NovaCol( "Mín",       { || aResumo[oBrowseRes:At(), 4] }, "C", 10, 2, "", CONTROL_ALIGN_RIGHT ), ;
-		NovaCol( "Máx",       { || aResumo[oBrowseRes:At(), 5] }, "C", 10, 2, "", CONTROL_ALIGN_RIGHT ), ;
-		NovaCol( "Doc %",     { || aResumo[oBrowseRes:At(), 6] }, "N", 6,  2, "@E 999.99", CONTROL_ALIGN_RIGHT ), ;
-		NovaCol( "Dev %",     { || aResumo[oBrowseRes:At(), 7] }, "N", 6,  2, "@E 999.99", CONTROL_ALIGN_RIGHT ), ;
-		NovaCol( "Anál %",    { || aResumo[oBrowseRes:At(), 8] }, "N", 6,  2, "@E 999.99", CONTROL_ALIGN_RIGHT ), ;
-		NovaCol( "Vald %",    { || aResumo[oBrowseRes:At(), 9] }, "N", 6,  2, "@E 999.99", CONTROL_ALIGN_RIGHT ) } )
+		U_NovaCol( "Definição", { || aResumo[oBrowseRes:At(), 1] }, "C", 30, 0, "@!" ), ;
+		U_NovaCol( "Itens",     { || aResumo[oBrowseRes:At(), 2] }, "N", 5,  0, "@E 99999" ), ;
+		U_NovaCol( "Média",     { || aResumo[oBrowseRes:At(), 3] }, "C", 10, 2, "", CONTROL_ALIGN_RIGHT ), ;
+		U_NovaCol( "Mín",       { || aResumo[oBrowseRes:At(), 4] }, "C", 10, 2, "", CONTROL_ALIGN_RIGHT ), ;
+		U_NovaCol( "Máx",       { || aResumo[oBrowseRes:At(), 5] }, "C", 10, 2, "", CONTROL_ALIGN_RIGHT ), ;
+		U_NovaCol( "Doc %",     { || aResumo[oBrowseRes:At(), 6] }, "N", 6,  2, "@E 999.99", CONTROL_ALIGN_RIGHT ), ;
+		U_NovaCol( "Dev %",     { || aResumo[oBrowseRes:At(), 7] }, "N", 6,  2, "@E 999.99", CONTROL_ALIGN_RIGHT ), ;
+		U_NovaCol( "Anál %",    { || aResumo[oBrowseRes:At(), 8] }, "N", 6,  2, "@E 999.99", CONTROL_ALIGN_RIGHT ), ;
+		U_NovaCol( "Vald %",    { || aResumo[oBrowseRes:At(), 9] }, "N", 6,  2, "@E 999.99", CONTROL_ALIGN_RIGHT ) } )
 	oBrowseRes:SetChange( bChange )
 	oBrowseRes:Activate()
 
@@ -170,51 +170,14 @@ Static Function Detalhe( oPanel as object, aDetalhe as array ) as object
 	oBrowseDet:DisableConfig()
 	oBrowseDet:DisableReport()
 	oBrowseDet:SetColumns( { ;
-		NovaCol( "Orçamento", { || aDetalhe[oBrowseDet:At(), 1] }, "C", 10, 0, "@!" ), ;
-		NovaCol( "Cliente",   { || aDetalhe[oBrowseDet:At(), 2] }, "C", 30, 0, "@!" ), ;
-		NovaCol( "Ticket",    { || aDetalhe[oBrowseDet:At(), 3] }, "C", 15, 0, "@!" ), ;
-		NovaCol( "Demanda",   { || aDetalhe[oBrowseDet:At(), 4] }, "C", 50, 0, "" ), ;
-		NovaCol( "Horas",     { || aDetalhe[oBrowseDet:At(), 5] }, "C", 10, 2, "" ) } )
+		U_NovaCol( "Orçamento", { || aDetalhe[oBrowseDet:At(), 1] }, "C", 10, 0, "@!" ), ;
+		U_NovaCol( "Cliente",   { || aDetalhe[oBrowseDet:At(), 2] }, "C", 30, 0, "@!" ), ;
+		U_NovaCol( "Ticket",    { || aDetalhe[oBrowseDet:At(), 3] }, "C", 15, 0, "@!" ), ;
+		U_NovaCol( "Demanda",   { || aDetalhe[oBrowseDet:At(), 4] }, "C", 50, 0, "" ), ;
+		U_NovaCol( "Horas",     { || aDetalhe[oBrowseDet:At(), 5] }, "C", 10, 2, "" ) } )
 	oBrowseDet:Activate()
 
 Return oBrowseDet
-
-/*/{Protheus.doc} NovaCol
-	Monta as colunas dos browses
-
-	@type static function
-
-	@author igor.seberino
-
-	@since 16/11/2026
-
-	@param cTitulo, character, Título da coluna
-	@param bDado, codeblock, Bloco que retorna o valor da célula
-	@param cTipo, character, Tipo do dado (C, N, D)
-	@param nTam, numeric, Tamanho
-	@param nDec, numeric, Decimais
-	@param cPict, character, Picture
-	@param nAlign, numeric, Alinhamento (opcional, CONTROL_ALIGN_*)
-
-	@return object, Coluna criada (FWBrwColumn)
-/*/
-Static Function NovaCol( cTitulo as character, bDado as codeblock, cTipo as character, nTam as numeric, nDec as numeric, cPict as character, nAlign as numeric ) as object
-
-	Local oCol := FWBrwColumn():New() as object
-
-	oCol:SetTitle( cTitulo )
-	oCol:SetData( bDado )
-	oCol:SetType( cTipo )
-	oCol:SetSize( nTam )
-	oCol:SetDecimal( nDec )
-	oCol:SetPicture( cPict )
-
-	If !Empty(nAlign)
-		oCol:SetAlign( nAlign )
-	EndIf
-
-
-Return oCol
 
 /*/{Protheus.doc} Pesquisar
 	Executa as queries de resumo e detalhe com os filtros da tela
