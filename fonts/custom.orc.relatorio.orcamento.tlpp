@@ -5,21 +5,42 @@
 namespace custom.orc.relatorio.orcamento
 using namespace custom.orc.utils
 
+/*/{Protheus.doc} ZORCR01
+	Relatório (TReport) do orçamento posicionado: cabeçalho,
+	itens e atividades
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 18/11/2026
+/*/
 User Function ZORCR01()
 
-	Local oReport := ReportDef()
+	Local oReport := ReportDef() as object
 
 	oReport:PrintDialog()
 
 Return
 
-Static Function ReportDef()
+/*/{Protheus.doc} ReportDef
+	Estrutura do relatório: seções ZB4 > ZB5 > ZB6 e suas células
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 18/11/2026
+
+	@return object, Relatório (TReport)
+/*/
+Static Function ReportDef() as object
 
 	Local oReport  := TReport():New( "ZORCR01", "Impressao do Orcamento", /*cPergunta*/, ;
-		{ |oRep| ReportPrint( oRep ) }, "Imprime o orcamento posicionado" )
-	Local oSecCab  := TRSection():New( oReport, "Orcamento",  { "ZB4" } )
-	Local oSecItem := TRSection():New( oSecCab, "Item",       { "ZB5" } )
-	Local oSecAtiv := TRSection():New( oSecItem, "Atividade", { "ZB6" } )
+		{ |oRep| ReportPrint( oRep ) }, "Imprime o orcamento posicionado" ) as object
+	Local oSecCab  := TRSection():New( oReport, "Orcamento",  { "ZB4" } ) as object
+	Local oSecItem := TRSection():New( oSecCab, "Item",       { "ZB5" } ) as object
+	Local oSecAtiv := TRSection():New( oSecItem, "Atividade", { "ZB6" } ) as object
 
 	//Campo + Alias
 	TRCell():New( oSecCab, "ZB4_COD",     "ZB4", , , , , , , , , , , , RGB( 242, 242, 242 ) )
@@ -49,15 +70,27 @@ Static Function ReportDef()
 
 Return oReport
 
+/*/{Protheus.doc} ReportPrint
+	Impressão: percorre os itens (ZB5) e as atividades (ZB6)
+	do orçamento posicionado na ZB4
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 18/11/2026
+
+	@param oReport, object, Relatório (TReport)
+/*/
 Static Function ReportPrint( oReport as object )
 
-	Local oSecCab := oReport:Section( 1 )
-	Local oSecItem := oSecCab:Section( 1 )
-	Local oSecAtiv := oSecItem:Section( 1 )
-	Local aArea := GetArea()
-	Local aAreaZB5 as array
-	Local aAreaZB6 as array
-	Local cChaveZB5 := xFilial("ZB5") + ZB4->ZB4_COD + ZB4->ZB4_REV
+	Local oSecCab   := oReport:Section( 1 ) as object
+	Local oSecItem  := oSecCab:Section( 1 ) as object
+	Local oSecAtiv  := oSecItem:Section( 1 ) as object
+	Local aArea     := GetArea() as array
+	Local aAreaZB5  as array
+	Local aAreaZB6  as array
+	Local cChaveZB5 := xFilial("ZB5") + ZB4->ZB4_COD + ZB4->ZB4_REV as character
 	Local cChaveZB6 as character
 
 	DbSelectArea("ZB5")

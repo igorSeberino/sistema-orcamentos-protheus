@@ -7,19 +7,19 @@ using namespace custom.orc.utils
 
 /*/{Protheus.doc} ZORCA06
 	Importação de orçamento a partir de CSV
-	
-    @author igor seberino
-	
-    @type user function
-	
-    @since 06/11/2026
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 06/11/2026
 /*/
 User Function ZORCA06()
 
-	Local cPath  := ""
-	Local aPergs := {}
-	Local aRet   := {}
-	Local oFile as object
+	Local cPath  := "" as character
+	Local aPergs := {} as array
+	Local aRet   := {} as array
+	Local oFile  as object
 
 	// Recebe o caminho do arquivo
 	cPath := tFileDialog( "Arquivos CSV (*.csv)|*.csv", "Selecione o arquivo de importação", , , .F. )
@@ -38,7 +38,7 @@ User Function ZORCA06()
 	EndIf
 
 	// Define campos pedidos ao usuário para inclusão em ZB4
-	/*nTipo (1=Campo de Digitação(Get)), Texto na tela, Valor Inicial, Picture(Mask), Validação, F3, When(Editável), Largura, Obrigatório*/ 
+	/*nTipo (1=Campo de Digitação(Get)), Texto na tela, Valor Inicial, Picture(Mask), Validação, F3, When(Editável), Largura, Obrigatório*/
 	aAdd( aPergs, { 1, "Cliente"         , Space(TamSX3("ZB4_CLIENT")[1])   , ""        , "", "SA1", "", 50, .T. } )
 	aAdd( aPergs, { 1, "Loja"            , Space(TamSX3("ZB4_LOJA")[1])     , ""        , "", ""   , "", 20, .T. } )
 	aAdd( aPergs, { 1, "Título"          , Space(TamSX3("ZB4_TITULO")[1])   , ""        , "", ""   , "", 90, .T. } )
@@ -53,35 +53,37 @@ User Function ZORCA06()
 		Return
 	EndIf
 
-	U_Importar( cPath, aRet, oFile )
+	Importar( cPath, aRet, oFile )
 
 Return
 
 /*/{Protheus.doc} Importar
 	Lê o CSV e grava o orçamento pelo modelo do ZORCA04, sem tela
 
-    @author igor seberino
-	
-    @type static function
-    
-	@param cPath, character, caminho do CSV
-	
-    @param aRet , array    , respostas do ParamBox
-/*/
-User Function Importar( cPath as character, aRet as array, oFile as object )
+	@type static function
 
-	Local oModel  := FWLoadModel(NZORCA04 + ".U_ZORCA04")
+	@author igor.seberino
+
+	@since 12/11/2026
+
+	@param cPath, character, Caminho do CSV
+	@param aRet, array, Respostas do ParamBox
+	@param oFile, object, Arquivo já aberto (FWFileReader); é fechado aqui
+/*/
+Static Function Importar( cPath as character, aRet as array, oFile as object )
+
+	Local oModel  := FWLoadModel(NZORCA04 + ".U_ZORCA04") as object
 	Local oZB5    as object
 	Local oZB6    as object
 	Local cLinha  as character
-	Local cItem   := ""
+	Local cItem   := "" as character
 	Local cDefin  as character
 	Local aCol    as array
-	Local aLog    := {}
-	Local nLinha  := 0
-	Local nItens  := 0
-	Local nAtiv   := 0
-	Local lItemOk := .F.
+	Local aLog    := {} as array
+	Local nLinha  := 0 as numeric
+	Local nItens  := 0 as numeric
+	Local nAtiv   := 0 as numeric
+	Local lItemOk := .F. as logical
 	Local lOk     as logical
 
 	oModel:SetOperation(MODEL_OPERATION_INSERT)
@@ -96,17 +98,17 @@ User Function Importar( cPath as character, aRet as array, oFile as object )
 	oZB6 := oModel:GetModel("ZB6DETAIL")
 
 	// Cabeçalho (ZB4) com os dados do ParamBox - Horas/Dia antes das atividades
-	lOk := U_SetCampo( oModel, "ZB4MASTER", "ZB4_CLIENT", aRet[1], 0, aLog ) .And. ;
-		U_SetCampo( oModel, "ZB4MASTER", "ZB4_LOJA"  , aRet[2], 0, aLog ) .And. ;
-		U_SetCampo( oModel, "ZB4MASTER", "ZB4_TITULO", aRet[3], 0, aLog ) .And. ;
-		U_SetCampo( oModel, "ZB4MASTER", "ZB4_HRDIA" , aRet[4], 0, aLog ) .And. ;
-		U_SetCampo( oModel, "ZB4MASTER", "ZB4_TICKET", aRet[5], 0, aLog ) .And. ;
-		U_SetCampo( oModel, "ZB4MASTER", "ZB4_TASK"  , aRet[6], 0, aLog )
+	lOk := SetCampo( oModel, "ZB4MASTER", "ZB4_CLIENT", aRet[1], 0, aLog ) .And. ;
+		SetCampo( oModel, "ZB4MASTER", "ZB4_LOJA"  , aRet[2], 0, aLog ) .And. ;
+		SetCampo( oModel, "ZB4MASTER", "ZB4_TITULO", aRet[3], 0, aLog ) .And. ;
+		SetCampo( oModel, "ZB4MASTER", "ZB4_HRDIA" , aRet[4], 0, aLog ) .And. ;
+		SetCampo( oModel, "ZB4MASTER", "ZB4_TICKET", aRet[5], 0, aLog ) .And. ;
+		SetCampo( oModel, "ZB4MASTER", "ZB4_TASK"  , aRet[6], 0, aLog )
 
 	If !lOk
 		oFile:Close()
 		oModel:DeActivate()
-		U_MostraLog(aLog)
+		MostraLog(aLog)
 		Return
 	EndIf
 
@@ -123,7 +125,7 @@ User Function Importar( cPath as character, aRet as array, oFile as object )
 		aCol := StrTokArr2( cLinha, ";", .T. )
 
 		If Len(aCol) < 10
-			aAdd( aLog, U_TxtLinha(nLinha) + "quantidade de colunas inválida (esperado 10)." )
+			aAdd( aLog, TxtLinha(nLinha) + "quantidade de colunas inválida (esperado 10)." )
 			Loop
 		EndIf
 
@@ -139,12 +141,17 @@ User Function Importar( cPath as character, aRet as array, oFile as object )
 			nItens++
 			nAtiv  := 0
 			cItem  := StrZero( Val(aCol[2]), 3 )
-			cDefin := IIf( Empty(aCol[5]), aRet[7], aCol[5] )
 
-			lItemOk := U_SetCampo( oModel, "ZB5DETAIL", "ZB5_ITEM"  , cItem  , nLinha, aLog ) .And. ;
-				U_SetCampo( oModel, "ZB5DETAIL", "ZB5_DEMAND", aCol[3], nLinha, aLog ) .And. ;
-				U_SetCampo( oModel, "ZB5DETAIL", "ZB5_DEFIN" , cDefin , nLinha, aLog ) .And. ;
-				U_SetCampo( oModel, "ZB5DETAIL", "ZB5_AREA"  , aCol[6], nLinha, aLog )
+			If Empty(aCol[5])
+				cDefin := aRet[7]
+			Else
+				cDefin := aCol[5]
+			EndIf
+
+			lItemOk := SetCampo( oModel, "ZB5DETAIL", "ZB5_ITEM"  , cItem  , nLinha, aLog ) .And. ;
+				SetCampo( oModel, "ZB5DETAIL", "ZB5_DEMAND", aCol[3], nLinha, aLog ) .And. ;
+				SetCampo( oModel, "ZB5DETAIL", "ZB5_DEFIN" , cDefin , nLinha, aLog ) .And. ;
+				SetCampo( oModel, "ZB5DETAIL", "ZB5_AREA"  , aCol[6], nLinha, aLog )
 
 			If !lItemOk
 				oZB5:DeleteLine()
@@ -153,10 +160,10 @@ User Function Importar( cPath as character, aRet as array, oFile as object )
 		Case aCol[1] == "A"
 
 			If !lItemOk
-				aAdd( aLog, U_TxtLinha(nLinha) + "atividade ignorada, o item " + aCol[2] + " foi rejeitado." )
+				aAdd( aLog, TxtLinha(nLinha) + "atividade ignorada, o item " + aCol[2] + " foi rejeitado." )
 
 			ElseIf StrZero( Val(aCol[2]), 3 ) != cItem
-				aAdd( aLog, U_TxtLinha(nLinha) + "atividade do item " + aCol[2] + ", mas o último item lido é " + cItem + "." )
+				aAdd( aLog, TxtLinha(nLinha) + "atividade do item " + aCol[2] + ", mas o último item lido é " + cItem + "." )
 
 			Else
 				// ZB6 é filha da ZB5: a grid já está na linha do item atual
@@ -166,12 +173,12 @@ User Function Importar( cPath as character, aRet as array, oFile as object )
 
 				nAtiv++
 
-				lOk := U_SetCampo( oModel, "ZB6DETAIL", "ZB6_SUB" , StrZero( Val(aCol[3]), 3 ), nLinha, aLog ) .And. ;
-					U_SetCampo( oModel, "ZB6DETAIL", "ZB6_ATIV", aCol[4]         , nLinha, aLog ) .And. ;
-					U_SetCampo( oModel, "ZB6DETAIL", "ZB6_DDOC", U_CsvNum(aCol[7]) , nLinha, aLog ) .And. ;
-					U_SetCampo( oModel, "ZB6DETAIL", "ZB6_DDEV", U_CsvNum(aCol[8]) , nLinha, aLog ) .And. ;
-					U_SetCampo( oModel, "ZB6DETAIL", "ZB6_DANA", U_CsvNum(aCol[9]) , nLinha, aLog ) .And. ;
-					U_SetCampo( oModel, "ZB6DETAIL", "ZB6_DVAL", U_CsvNum(aCol[10]), nLinha, aLog )
+				lOk := SetCampo( oModel, "ZB6DETAIL", "ZB6_SUB" , StrZero( Val(aCol[3]), 3 ), nLinha, aLog ) .And. ;
+					SetCampo( oModel, "ZB6DETAIL", "ZB6_ATIV", aCol[4]         , nLinha, aLog ) .And. ;
+					SetCampo( oModel, "ZB6DETAIL", "ZB6_DDOC", CsvNum(aCol[7]) , nLinha, aLog ) .And. ;
+					SetCampo( oModel, "ZB6DETAIL", "ZB6_DDEV", CsvNum(aCol[8]) , nLinha, aLog ) .And. ;
+					SetCampo( oModel, "ZB6DETAIL", "ZB6_DANA", CsvNum(aCol[9]) , nLinha, aLog ) .And. ;
+					SetCampo( oModel, "ZB6DETAIL", "ZB6_DVAL", CsvNum(aCol[10]), nLinha, aLog )
 
 				If !lOk
 					oZB6:DeleteLine()
@@ -179,7 +186,7 @@ User Function Importar( cPath as character, aRet as array, oFile as object )
 			EndIf
 
 		Otherwise
-			aAdd( aLog, U_TxtLinha(nLinha) + "tipo de linha inválido [" + aCol[1] + "], esperado I ou A." )
+			aAdd( aLog, TxtLinha(nLinha) + "tipo de linha inválido [" + aCol[1] + "], esperado I ou A." )
 
 		EndCase
 
@@ -191,46 +198,61 @@ User Function Importar( cPath as character, aRet as array, oFile as object )
 		aIns( aSize(aLog, Len(aLog) + 1), 1 )
 		aLog[1] := "Orçamento gerado: " + oModel:GetValue("ZB4MASTER", "ZB4_COD") + "/" + oModel:GetValue("ZB4MASTER", "ZB4_REV")
 	Else
-		aAdd( aLog, "Orçamento NÃO gravado: " + U_ErroModel(oModel) )
+		aAdd( aLog, "Orçamento NÃO gravado: " + ErroModel(oModel) )
 	EndIf
 
 	oModel:DeActivate()
 
-	U_MostraLog(aLog)
+	MostraLog(aLog)
 
 Return
 
 /*/{Protheus.doc} SetCampo
 	SetValue no modelo; se a validação recusar, registra o motivo no log
 
-    @author igor seberino
-    
 	@type static function
-	
-    @return logical, .T. se o valor foi aceito
+
+	@author igor.seberino
+
+	@since 12/11/2026
+
+	@param oModel, object, Modelo ZORCA04M ativo
+	@param cSubModel, character, Submodelo (ex.: ZB5DETAIL)
+	@param cCampo, character, Campo
+	@param xValor, variant, Valor gravado
+	@param nLinha, numeric, Linha do CSV (0 = parâmetros do ParamBox)
+	@param aLog, array, Log da importação (recebe o erro)
+
+	@return logical, .T. se o valor foi aceito
 /*/
-User Function SetCampo( oModel as object, cSubModel as character, cCampo as character, xValor, nLinha as numeric, aLog as array )
+Static Function SetCampo( oModel as object, cSubModel as character, cCampo as character, xValor, nLinha as numeric, aLog as array ) as logical
+
+	Local lRet := .T. as logical
 
 	If !(oModel:SetValue( cSubModel, cCampo, xValor ))
-		aAdd( aLog, U_TxtLinha(nLinha) + AllTrim(cCampo) + " - " + U_ErroModel(oModel) )
-		Return .F.
+		aAdd( aLog, TxtLinha(nLinha) + AllTrim(cCampo) + " - " + ErroModel(oModel) )
+		lRet := .F.
 	EndIf
 
-Return .T.
+Return lRet
 
 /*/{Protheus.doc} ErroModel
 	Mensagem + solução do último erro do modelo
-	
-    @author igor seberino
 
-    @type static function
+	@type static function
 
-	@return character
+	@author igor.seberino
+
+	@since 12/11/2026
+
+	@param oModel, object, Modelo com erro
+
+	@return character, Mensagem do erro
 /*/
-User Function ErroModel( oModel as object ) as character
+Static Function ErroModel( oModel as object ) as character
 
-	Local aErro := oModel:GetErrorMessage()
-	Local cMsg  := AllTrim( cValToChar(aErro[6]) )
+	Local aErro := oModel:GetErrorMessage() as array
+	Local cMsg  := AllTrim( cValToChar(aErro[6]) ) as character
 
 	If !Empty(aErro[7])
 		cMsg += " (" + AllTrim( cValToChar(aErro[7]) ) + ")"
@@ -241,37 +263,58 @@ Return cMsg
 /*/{Protheus.doc} CsvNum
 	Converte número do CSV (decimal com vírgula) para numérico
 
-    @author igor seberino
-	
-    @type static function
+	@type static function
 
-	@return numeric
+	@author igor.seberino
+
+	@since 12/11/2026
+
+	@param cValor, character, Valor lido do CSV
+
+	@return numeric, Valor convertido
 /*/
-User Function CsvNum( cValor as character ) as numeric
+Static Function CsvNum( cValor as character ) as numeric
 Return Val( StrTran( AllTrim(cValor), ",", "." ) )
 
 /*/{Protheus.doc} TxtLinha
 	Prefixo do log: "Linha N: " ou "Parâmetros: " (nLinha = 0)
 
-    @author igor seberino
-
 	@type static function
-	
-    @return character
+
+	@author igor.seberino
+
+	@since 12/11/2026
+
+	@param nLinha, numeric, Linha do CSV (0 = parâmetros do ParamBox)
+
+	@return character, Prefixo da mensagem
 /*/
-User Function TxtLinha( nLinha as numeric ) as character
-Return IIf( nLinha == 0, "Parâmetros: ", "Linha " + cValToChar(nLinha) + ": " )
+Static Function TxtLinha( nLinha as numeric ) as character
+
+	Local cTexto as character
+
+	If nLinha == 0
+		cTexto := "Parâmetros: "
+	Else
+		cTexto := "Linha " + cValToChar(nLinha) + ": "
+	EndIf
+
+Return cTexto
 
 /*/{Protheus.doc} MostraLog
 	Exibe o resultado da importação
 
-    @author igor seberino
-    
 	@type static function
-/*/
-User Function MostraLog( aLog as array )
 
-	Local cTexto := ""
+	@author igor.seberino
+
+	@since 12/11/2026
+
+	@param aLog, array, Mensagens da importação
+/*/
+Static Function MostraLog( aLog as array )
+
+	Local cTexto := "" as character
 	Local nI     as numeric
 
 	For nI := 1 To Len(aLog)

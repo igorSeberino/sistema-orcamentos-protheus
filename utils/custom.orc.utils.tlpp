@@ -4,39 +4,106 @@
 
 namespace custom.orc.utils
 
-/*/{Protheus.doc} CodExiste
-	Verifica se ja existe produto (nao deletado) com o codigo
-	informado.
+/*/{Protheus.doc} RegEmUso
+	Verifica se existe registro (não deletado) na tabela com os
+	filtros informados. Usado para saber se um cadastro já foi
+	usado antes de excluir.
 
 	@type user function
 
 	@author igor.seberino
 
-	@since 22/10/2026
+	@since 26/11/2026
 
-	@param cCod, character
+	@param cAlias, character, Tabela consultada (ex.: "ZB5")
+	@param aWhere, array, Filtros no formato do QuerySet: { { "ZB5.ZB5_AREA = ", cCod } }
 
-	@return logical, .T.=Existe, .F.=Nao Existe
+	@return logical, .T. se existe pelo menos um registro
 /*/
-User Function CodExiste( cCod as character, cAlias as character )
+User Function RegEmUso( cAlias as character, aWhere as array ) as logical
 
-	Local lExiste := .F.
-	Local cCodField := cAlias + '_COD'
-	Local cCodFieldSearch := cAlias + "." + cCodField + " = "
-
-	Local cQuery := U_QuerySet( cAlias, { cCodField }, { { cCodFieldSearch, cCod } } )
-
-	Local cAliasQry := MPSysOpenQuery(cQuery)
-
-	lExiste := !(cAliasQry)->(EoF())
+	Local cQuery    := U_QuerySet( cAlias, { cAlias + "_FILIAL" }, aWhere ) as character
+	Local cAliasQry := MPSysOpenQuery( cQuery ) as character
+	Local lExiste   := !(cAliasQry)->(EoF()) as logical
 
 	(cAliasQry)->(dbCloseArea())
 
 Return lExiste
 
+/*/{Protheus.doc} EhAprovador
+	Verifica se o usuário está cadastrado como aprovador ativo (ZB3).
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 26/11/2026
+
+	@param cUser, character, Código do usuário
+
+	@return logical, .T. se é aprovador ativo
+/*/
+User Function EhAprovador( cUser as character ) as logical
+Return U_RegEmUso( "ZB3", { { "ZB3.ZB3_USER = ", cUser }, { "ZB3.ZB3_ATIVO = ", ATIVO_SIM } } )
+
+/*/{Protheus.doc} ExcOuInativa
+	Exclusão dos cadastros (ZORCA01-03). Se o registro posicionado
+	não está em uso, abre a tela de exclusão. Se está em uso e ativo,
+	oferece inativar. Se está em uso e já inativo, só avisa.
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 26/11/2026
+
+	@param cNamespace, character, Namespace do fonte (ex.: NZORCA01)
+	@param cRotina, character, Rotina (ex.: "ZORCA01")
+	@param cAlias, character, Tabela do cadastro (ex.: "ZB1")
+	@param lEmUso, logical, .T. se o registro já foi usado
+	@param cPergunta, character, Pergunta exibida para inativar
+	@param cTitulo, character, Título da pergunta
+	@param cJaInativo, character, Aviso quando o registro já está inativo
+/*/
+User Function ExcOuInativa( cNamespace as character, cRotina as character, cAlias as character, lEmUso as logical, ;
+		cPergunta as character, cTitulo as character, cJaInativo as character )
+
+	Local cFonte    := cNamespace + ".U_" + cRotina as character
+	Local cSubModel := cAlias + "MASTER" as character
+	Local cCampoAtv := cAlias + "_ATIVO" as character
+	Local oModel    as object
+
+	If !lEmUso
+		FWExecView( "Excluir", cFonte, MODEL_OPERATION_DELETE )
+
+	ElseIf (cAlias)->( FieldGet( FieldPos( cCampoAtv ) ) ) == ATIVO_SIM
+
+		If MsgYesNo( cPergunta, cTitulo )
+			oModel := FWLoadModel( cFonte )
+			oModel:SetOperation( MODEL_OPERATION_UPDATE )
+			oModel:Activate()
+			oModel:SetValue( cSubModel, cCampoAtv, ATIVO_NAO )
+
+			If oModel:VldData()
+				oModel:CommitData()
+			Else
+				Help( , , cRotina + "EXC", , oModel:GetErrorMessage()[6], 1, 0, ;
+					, , , , , { "Contate o suporte." } )
+			EndIf
+
+			oModel:DeActivate()
+		EndIf
+
+	Else
+		Aviso( "ATENÇÃO", cJaInativo, { "Ok" } )
+	EndIf
+
+Return
+
 /*/{Protheus.doc} QuerySet
-	Monta uma query de acordo com os parametros passados.
-    Protegida contra SQL Injection com FWPreparedStatement
+	Monta uma query de acordo com os parâmetros passados.
+	Protegida contra SQL Injection com FWPreparedStatement.
+	Sempre filtra D_E_L_E_T_ e filial.
 
 	@type user function
 
@@ -44,19 +111,15 @@ Return lExiste
 
 	@since 22/10/2026
 
-	@param cAlias, character
-    
-    @param aParamsSelect, array, parametros que deseja como retorno
+	@param cAlias, character, Tabela consultada
+	@param aParamsSelect, array, Campos que deseja como retorno
+	@param aParamsWhere, array, Filtros no formato { { Campo + Operador, Valor } }, ex.: { { "ZA1.ZA1_COD = ", "000004" } }
 
-    @param aParamsWhere, array, parametros que deseja filtrar,
-    formato { {Campo + Operador, Valor} }
-    exemplo { { "ZA1.ZA1_COD = ", "000004" } }
-
-	@return cQueryRet, query montada
+	@return character, Query montada
 /*/
-User Function QuerySet( cAlias as character, aParamsSelect as array, aParamsWhere as array )
+User Function QuerySet( cAlias as character, aParamsSelect as array, aParamsWhere as array ) as character
 
-	Local oStmt := FWPreparedStatement():New()
+	Local oStmt := FWPreparedStatement():New() as object
 	Local cQueryBase as character
 	Local cQueryRet as character
 	Local nI as integer
@@ -136,7 +199,9 @@ Return cQueryRet
 
 	@since 27/10/2026
 
-	@return numeric
+	@param cHour, character, Horas no formato hh:mm (ou só hh)
+
+	@return numeric, Horas em decimal
 /*/
 User Function HoursToNum( cHour as character ) as numeric
 
@@ -159,7 +224,7 @@ User Function HoursToNum( cHour as character ) as numeric
 Return Round( nHH + ( nMM / 60 ), 2 )
 
 /*/{Protheus.doc} NumToHours
-	Converte horas decimais em texto
+	Converte horas decimais em texto h:mm. Ex.: 8.5 -> "8:30"
 
 	@type user function
 
@@ -167,31 +232,38 @@ Return Round( nHH + ( nMM / 60 ), 2 )
 
 	@since 27/10/2026
 
-	@return logical
-/*/
-User Function NumToHours( nValue as numeric )
+	@param nValue, numeric, Horas em decimal
 
-	Local nMinutos := Round( nValue * 60, 0 )        // arredonda o total em minutos
-	Local nHH      := Int( nMinutos / 60 )
-	Local nMM      := nMinutos % 60
-	Local cHH      := AllTrim( Transform( nHH, "@E 999,999,999" ) )
+	@return character, Horas no formato h:mm
+/*/
+User Function NumToHours( nValue as numeric ) as character
+
+	Local nMinutos := Round( nValue * 60, 0 ) as numeric       // arredonda o total em minutos
+	Local nHH      := Int( nMinutos / 60 ) as numeric
+	Local nMM      := nMinutos % 60 as numeric
+	Local cHH      := AllTrim( Transform( nHH, "@E 999,999,999" ) ) as character
 
 Return cHH + ":" + StrZero( nMM, 2 )
 
 /*/{Protheus.doc} TotalHrsCharSet
-	Habilita a edição do campo de total de horas, 
-    insere o valor e desabilita de novo
+	Grava o total de horas (texto) do submodelo e recalcula
+	o total do submodelo pai
 
 	@type user function
 
 	@author igor.seberino
 
 	@since 03/11/2026
+
+	@param nTotal, numeric, Total de horas em decimal
+	@param cModel, character, Submodelo (ZB5DETAIL ou ZB6DETAIL)
+
+	@return logical, sempre .T.
 /*/
 User Function TotalHrsCharSet( nTotal as numeric, cModel as character ) as logical
 
-	Local oModel := FWModelActive()
-	Local cAlias := Left( cModel, 3 )
+	Local oModel := FWModelActive() as object
+	Local cAlias := Left( cModel, 3 ) as character
 	Local cPai   as character
 
 	oModel:GetModel( cModel ):LoadValue( cAlias + "_TOTHR", U_NumToHours( nTotal ) )
@@ -205,27 +277,32 @@ User Function TotalHrsCharSet( nTotal as numeric, cModel as character ) as logic
 		cPai := ""
 	EndCase
 
+	// CalcHrsRows fica no fonte do ZORCA04 (NZORCA04): chamada com o namespace completo
 	If !Empty( cPai )
-		U_CalcHrsRows( cModel, cAlias + "_TTHRNM", cPai, Left( cPai, 3 ) + "_TTHRNM" )
+		custom.orc.orcamento.manutencao.U_CalcHrsRows( cModel, cAlias + "_TTHRNM", cPai, Left( cPai, 3 ) + "_TTHRNM" )
 	EndIf
 
 Return .T.
 
 /*/{Protheus.doc} OnHrDayChange
 	Recalcula todas as atividades e todos os itens
-    na alteração do Hrs/Dia, a partir do novo valor. 
-    Demais gatilhos e atualizações partem dos campos
-    alterados aqui
+	na alteração do Hrs/Dia, a partir do novo valor.
+	Demais gatilhos e atualizações partem dos campos
+	alterados aqui
 
 	@type user function
 
 	@author igor.seberino
 
 	@since 03/11/2026
-/*/
-User Function OnHrDayChange( nHrDia as numeric )
 
-	Local oModel    := FWModelActive()
+	@param nHrDia, numeric, Novo Horas/Dia em decimal
+
+	@return logical, sempre .T.
+/*/
+User Function OnHrDayChange( nHrDia as numeric ) as logical
+
+	Local oModel    := FWModelActive() as object
 	Local oModelZB5 as object
 	Local oModelZB6 as object
 	Local n1 as numeric
@@ -335,7 +412,7 @@ Return .T.
 
 /*/{Protheus.doc} VldDefin
 	Valida definição caso seja escrita pelo usuário,
-    verificando se está ativa ou existe. 
+	verificando se está ativa ou existe.
 
 	@type user function
 
@@ -343,13 +420,15 @@ Return .T.
 
 	@since 03/11/2026
 
-    @return logical
-/*/
-User Function VldDefin( cDefin as character )
+	@param cDefin, character, Código da definição (ZB2)
 
-	Local cQuery := U_QuerySet( "ZB2", {"ZB2_COD"}, {{"ZB2.ZB2_COD = ", cDefin}, {"ZB2.ZB2_ATIVO = ", ATIVO_SIM}} )
-	Local cAliasQry := MPSysOpenQuery(cQuery)
-	Local lRet := .T.
+	@return logical, .T. se existe e está ativa
+/*/
+User Function VldDefin( cDefin as character ) as logical
+
+	Local cQuery    := U_QuerySet( "ZB2", {"ZB2_COD"}, {{"ZB2.ZB2_COD = ", cDefin}, {"ZB2.ZB2_ATIVO = ", ATIVO_SIM}} ) as character
+	Local cAliasQry := MPSysOpenQuery(cQuery) as character
+	Local lRet      := .T. as logical
 
 	If (cAliasQry)->(EoF())
 		Help( , , "HELP", , "Definição não existe ou está inativa", 1, 0 )
@@ -362,7 +441,7 @@ Return lRet
 
 /*/{Protheus.doc} VldArea
 	Valida área caso seja escrita pelo usuário,
-    verificando se está ativa ou existe. 
+	verificando se está ativa ou existe.
 
 	@type user function
 
@@ -370,13 +449,15 @@ Return lRet
 
 	@since 03/11/2026
 
-    @return logical
-/*/
-User Function VldArea( cArea as character )
+	@param cArea, character, Código da área (ZB1)
 
-	Local cQuery := U_QuerySet( "ZB1", {"ZB1_COD"}, {{"ZB1.ZB1_COD = ", cArea}, {"ZB1.ZB1_ATIVO = ", ATIVO_SIM}} )
-	Local cAliasQry := MPSysOpenQuery(cQuery)
-	Local lRet := .T.
+	@return logical, .T. se existe e está ativa
+/*/
+User Function VldArea( cArea as character ) as logical
+
+	Local cQuery    := U_QuerySet( "ZB1", {"ZB1_COD"}, {{"ZB1.ZB1_COD = ", cArea}, {"ZB1.ZB1_ATIVO = ", ATIVO_SIM}} ) as character
+	Local cAliasQry := MPSysOpenQuery(cQuery) as character
+	Local lRet      := .T. as logical
 
 	If (cAliasQry)->(EoF())
 		Help( , , "HELP", , "Área não existe ou está inativa", 1, 0 )
@@ -389,7 +470,7 @@ Return lRet
 
 /*/{Protheus.doc} VldAprov
 	Valida se o usuário existe e se
-    já está cadastrado como aprovador
+	já está cadastrado como aprovador
 
 	@type user function
 
@@ -397,13 +478,15 @@ Return lRet
 
 	@since 03/11/2026
 
-    @return logical
-/*/
-User Function VldAprov( cUser as character )
+	@param cUser, character, Código do usuário
 
-	Local cQuery := U_QuerySet( "ZB3", {"ZB3_USER"}, {{"ZB3.ZB3_USER = ", cUser}} )
-	Local cAliasQry := MPSysOpenQuery(cQuery)
-	Local lRet := .T.
+	@return logical, .T. se existe e ainda não é aprovador
+/*/
+User Function VldAprov( cUser as character ) as logical
+
+	Local cQuery    := U_QuerySet( "ZB3", {"ZB3_USER"}, {{"ZB3.ZB3_USER = ", cUser}} ) as character
+	Local cAliasQry := MPSysOpenQuery(cQuery) as character
+	Local lRet      := .T. as logical
 
 	If !UsrExist(cUser)
 		Help( , , "HELP", , "Usuário não existe", 1, 0 )
@@ -417,69 +500,38 @@ User Function VldAprov( cUser as character )
 
 Return lRet
 
-User Function VldHours( cHour as character )
+/*/{Protheus.doc} VldHours
+	Valida os minutos de um texto hh:mm (00 a 59)
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 12/11/2026
+
+	@param cHour, character, Horas no formato hh:mm (ou só hh)
+
+	@return logical, .T. se os minutos são válidos
+/*/
+User Function VldHours( cHour as character ) as logical
 
 	Local nPos as numeric
 	Local nMM  as numeric
+	Local lRet := .T. as logical
 
 	cHour := AllTrim( cHour )
 	nPos  := At( ":", cHour )
 
 	// Sem ":" = horas inteiras, não há minuto para validar
-	If nPos == 0
-		Return .T.
-	EndIf
+	If nPos > 0
 
-	nMM := Val( SubStr( cHour, nPos + 1 ) )
+		nMM := Val( SubStr( cHour, nPos + 1 ) )
 
-	If nMM < 0 .Or. nMM > 59
-		Return (Help( , , "HELP", , "Valor de minutos inválido", 1, 0 ), .F.)
-	EndIf
-
-Return .T.
-
-User Function CodToDef( aItens as array, nPos as integer, cAlias as character, cRet as character )
-
-	Local lRet := .T.
-	Local n1 as integer
-	Local n2 as integer
-	Local cQuery as character
-	Local cAliasQry as character
-	Local aCods := {}
-	Local aDefs := {}
-
-	// Captura todos os códigos diferentes presentes no array
-	For n1 := 1 to Len(aItens)
-		If aScan( aCods, aItens[n1,nPos] ) == 0
-			aAdd( aCods, aItens[n1,nPos] )
-		EndIf
-	Next n1
-
-	// Busca e armazena a definição de cada código
-	For n1 := 1 to Len(aCods)
-		cQuery := U_QuerySet( cAlias, { cRet }, { {  FormatStr("%c.%c_COD = ", cAlias, cAlias), aCods[n1]} } )
-		cAliasQry := MPSysOpenQuery(cQuery)
-
-		If !(cAliasQry)->(EoF())
-			aAdd( aDefs, (cAliasQry)->( FieldGet( FieldPos(cRet) ) ) )
-		Else
+		If nMM < 0 .Or. nMM > 59
+			Help( , , "HELP", , "Valor de minutos inválido", 1, 0 )
 			lRet := .F.
-			Help( , , "HELP", , "Código " + AllTrim(aCods[n1]) + " não existe na tabela " + cAlias, 1, 0 )
-			(cAliasQry)->(dbCloseArea())
-			exit
 		EndIf
 
-		(cAliasQry)->(dbCloseArea())
-	Next n1
-
-	// Substitui os códigos pelos valores correspondentes
-	If lRet
-		For n1 := 1 to Len(aItens)
-			n2 := aScan( aCods, aItens[n1,nPos] )
-			If n2 > 0
-				aItens[n1,nPos] := aDefs[n2]
-			EndIf
-		Next n1
 	EndIf
 
 Return lRet

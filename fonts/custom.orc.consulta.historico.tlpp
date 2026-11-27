@@ -7,12 +7,14 @@ using namespace custom.orc.utils
 
 /*/{Protheus.doc} ZORCA07
 	Consulta histórica com filtros
-	
-    @author igor seberino
-	
-    @type user function
-	
-    @since 16/11/2026
+
+	@type user function
+
+	@author igor.seberino
+
+	@since 16/11/2026
+
+	@param cDef, character, Definição inicial do filtro (opcional, vem do botão Atividades Similares)
 /*/
 User Function ZORCA07( cDef as character )
 
@@ -77,16 +79,12 @@ User Function ZORCA07( cDef as character )
 	// Campo Data Init
 	TSay():New( 031, 210, { || "Período de" }, oPanel, , oFontSubt, , , , .T., , , 050, 010 )
 	oGet := TGet():New( 030, 255, { |u| If( PCount() > 0, dDateIni := u, dDateIni ) }, oPanel, 050, 010, , , , , oFont, , , .T., , , , , , , , , , , , , , .T. )
-	oGet:bValid := { || IIf(;
-		Empty(dDateIni) .Or. Empty(dDateFin) .Or. (dDateIni <= dDateFin), ( Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, lAprov, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ), .T. ),;
-		(Help( , , "HELP", , "Data inicial maior que a final", 1, 0 ), .F.) ) }
+	oGet:bValid := { || VldPeriodo( dDateIni, dDateFin ) .And. ( Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, lAprov, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ), .T. ) }
 
 	// Campo Data Fin
 	TSay():New( 031, 305, { || "até" }, oPanel, , oFontSubt, , , , .T., , , 020, 010 )
 	oGet := TGet():New( 030, 320, { |u| If( PCount() > 0, dDateFin := u, dDateFin ) }, oPanel, 050, 010, , , , , oFont, , , .T., , , , , , , , , , , , , , .T. )
-	oGet:bValid := { || IIf(;
-		Empty(dDateFin) .Or. Empty(dDateIni) .Or. (dDateIni <= dDateFin), ( Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, lAprov, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ), .T. ),;
-		(Help( , , "HELP", , "Data inicial maior que a final", 1, 0 ), .F.) ) }
+	oGet:bValid := { || VldPeriodo( dDateIni, dDateFin ) .And. ( Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, lAprov, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ), .T. ) }
 
 	oCheck := TCheckBox():New( 033, 375, "Somente aprovados", { |u| If( PCount() > 0, lAprov := u, lAprov ) }, oPanel, 100, 010, , ;
 		{ || Pesquisar( cDef, cArea, cCli, dDateIni, dDateFin, lAprov, oBrowseRes, aResumo, oBrowseDet, aDetalhe, aDetTodos ) }, oFontSubt, , , , , .T. )
@@ -109,15 +107,21 @@ User Function ZORCA07( cDef as character )
 Return
 
 /*/{Protheus.doc} Resumo
-	Monta o browse de resumo
-	
-    @author igor seberino
-	
-    @type user function
-	
-    @since 16/11/2026
+	Monta o browse de resumo (uma linha por definição)
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 16/11/2026
+
+	@param oPanel, object, Painel onde o browse é criado
+	@param aResumo, array, Dados do resumo
+	@param bChange, codeblock, Executado ao trocar de linha (filtra o detalhe)
+
+	@return object, Browse criado (FWBrowse)
 /*/
-Static Function Resumo( oPanel as object, aResumo as array, bChange as codeblock )
+Static Function Resumo( oPanel as object, aResumo as array, bChange as codeblock ) as object
 
 	Local oPanelRes := TPanel():New( 062, 010, , oPanel, , , , , , 530, 060 ) as object
 	Local oBrowseRes := FWBrowse():New( oPanelRes ) as object
@@ -142,15 +146,20 @@ Static Function Resumo( oPanel as object, aResumo as array, bChange as codeblock
 Return oBrowseRes
 
 /*/{Protheus.doc} Detalhe
-	Monta o browse de detalhe
-	
-    @author igor seberino
-	
-    @type user function
-	
-    @since 16/11/2026
+	Monta o browse de detalhe (itens da definição selecionada)
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 16/11/2026
+
+	@param oPanel, object, Painel onde o browse é criado
+	@param aDetalhe, array, Dados do detalhe
+
+	@return object, Browse criado (FWBrowse)
 /*/
-Static Function Detalhe( oPanel as object, aDetalhe as array )
+Static Function Detalhe( oPanel as object, aDetalhe as array ) as object
 
 	Local oPanelDet := TPanel():New( 140, 010, , oPanel, , , , , , 530, 100 ) as object
 	Local oBrowseDet := FWBrowse():New( oPanelDet ) as object
@@ -171,14 +180,24 @@ Return oBrowseDet
 
 /*/{Protheus.doc} NovaCol
 	Monta as colunas dos browses
-	
-    @author igor seberino
-	
-    @type user function
-	
-    @since 16/11/2026
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 16/11/2026
+
+	@param cTitulo, character, Título da coluna
+	@param bDado, codeblock, Bloco que retorna o valor da célula
+	@param cTipo, character, Tipo do dado (C, N, D)
+	@param nTam, numeric, Tamanho
+	@param nDec, numeric, Decimais
+	@param cPict, character, Picture
+	@param nAlign, numeric, Alinhamento (opcional, CONTROL_ALIGN_*)
+
+	@return object, Coluna criada (FWBrwColumn)
 /*/
-Static Function NovaCol( cTitulo as character, bDado as codeblock, cTipo as character, nTam as numeric, nDec as numeric, cPict as character, nAlign as numeric )
+Static Function NovaCol( cTitulo as character, bDado as codeblock, cTipo as character, nTam as numeric, nDec as numeric, cPict as character, nAlign as numeric ) as object
 
 	Local oCol := FWBrwColumn():New() as object
 
@@ -197,15 +216,30 @@ Static Function NovaCol( cTitulo as character, bDado as codeblock, cTipo as char
 Return oCol
 
 /*/{Protheus.doc} Pesquisar
-	Faz a query no banco
-	
-    @author igor seberino
-	
-    @type user function
-	
-    @since 16/11/2026
+	Executa as queries de resumo e detalhe com os filtros da tela
+	e atualiza os dois browses
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 16/11/2026
+
+	@param cDef, character, Filtro de definição
+	@param cArea, character, Filtro de área
+	@param cCli, character, Filtro de cliente
+	@param dDateIni, date, Data inicial
+	@param dDateFin, date, Data final
+	@param lAprov, logical, Somente aprovados
+	@param oBrowseRes, object, Browse de resumo
+	@param aResumo, array, Dados do resumo (preenchido aqui)
+	@param oBrowseDet, object, Browse de detalhe
+	@param aDetalhe, array, Detalhe da definição selecionada
+	@param aDetTodos, array, Detalhe de todas as definições (preenchido aqui)
+
+	@return logical, sempre .T. (usado em bValid)
 /*/
-Static Function Pesquisar( cDef as character, cArea as character, cCli as character, dDateIni as date, dDateFin as date, lAprov as logical, oBrowseRes as object, aResumo as array, oBrowseDet as object, aDetalhe as array, aDetTodos as array )
+Static Function Pesquisar( cDef as character, cArea as character, cCli as character, dDateIni as date, dDateFin as date, lAprov as logical, oBrowseRes as object, aResumo as array, oBrowseDet as object, aDetalhe as array, aDetTodos as array ) as logical
 
 	Local aArea   := GetArea() as array
 	Local aParams := {} as array
@@ -253,7 +287,27 @@ Static Function Pesquisar( cDef as character, cArea as character, cCli as charac
 
 Return .T.
 
-Static Function Filtros( cDef as character, cArea as character, cCli as character, dDateIni as date, dDateFin as date, lAprov as logical, aParams as array )
+/*/{Protheus.doc} Filtros
+	Monta o FROM/JOIN/WHERE comum às queries de resumo e detalhe,
+	com parâmetros "?" (sem concatenar valores)
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 17/11/2026
+
+	@param cDef, character, Filtro de definição
+	@param cArea, character, Filtro de área
+	@param cCli, character, Filtro de cliente
+	@param dDateIni, date, Data inicial
+	@param dDateFin, date, Data final
+	@param lAprov, logical, Somente aprovados
+	@param aParams, array, Valores dos "?" na ordem (preenchido aqui)
+
+	@return character, Trecho FROM ... WHERE da query
+/*/
+Static Function Filtros( cDef as character, cArea as character, cCli as character, dDateIni as date, dDateFin as date, lAprov as logical, aParams as array ) as character
 
 	Local cFiltro as character
 
@@ -319,34 +373,49 @@ Static Function Filtros( cDef as character, cArea as character, cCli as characte
 
 Return cFiltro
 
-Static Function QryDetalhe( cFiltro as character, aParams as array )
+/*/{Protheus.doc} QryDetalhe
+	Query do detalhe: um registro por item de orçamento (ZB5)
 
-	Local oStmt := FWPreparedStatement():New() as object
+	@type static function
+
+	@author igor.seberino
+
+	@since 17/11/2026
+
+	@param cFiltro, character, Trecho FROM ... WHERE (Filtros)
+	@param aParams, array, Valores dos "?"
+
+	@return character, Query pronta
+/*/
+Static Function QryDetalhe( cFiltro as character, aParams as array ) as character
+
 	Local cQuery as character
-	Local nI    as integer
 
 	cQuery := " SELECT ZB4.ZB4_COD, ZB4.ZB4_REV, ZB4.ZB4_CLIENT, ZB4.ZB4_LOJA, ZB4.ZB4_TICKET, "
 	cQuery += "        ZB5.ZB5_DEFIN, ZB5.ZB5_ITEM, ZB5.ZB5_DEMAND, ZB5.ZB5_TTHRNM "
 	cQuery += cFiltro
 	cQuery += " ORDER BY ZB5.ZB5_DEFIN, ZB4.ZB4_COD, ZB4.ZB4_REV, ZB5.ZB5_ITEM "
 
-	oStmt:SetQuery( cQuery )
+Return PreparaQry( cQuery, aParams )
 
-	For nI := 1 To Len( aParams )
-		If ValType( aParams[nI] ) == "D"
-			oStmt:SetDate( nI, aParams[nI] )
-		Else
-			oStmt:SetString( nI, aParams[nI] )
-		EndIf
-	Next nI
+/*/{Protheus.doc} QryResumo
+	Query do resumo: um registro por definição, com média,
+	mínimo, máximo e percentual de cada fase
 
-Return oStmt:GetFixQuery()
+	@type static function
 
-Static Function QryResumo( cFiltro as character, aParams as array )
+	@author igor.seberino
 
-	Local oStmt := FWPreparedStatement():New() as object
+	@since 17/11/2026
+
+	@param cFiltro, character, Trecho FROM ... WHERE (Filtros)
+	@param aParams, array, Valores dos "?"
+
+	@return character, Query pronta
+/*/
+Static Function QryResumo( cFiltro as character, aParams as array ) as character
+
 	Local cQuery as character
-	Local nI    as integer
 
 	cQuery := " SELECT ZB2.ZB2_COD, ZB2.ZB2_DESC, "
 	cQuery += "        COUNT(*) ITENS, "
@@ -359,6 +428,27 @@ Static Function QryResumo( cFiltro as character, aParams as array )
 	cQuery += " GROUP BY ZB2.ZB2_COD, ZB2.ZB2_DESC "
 	cQuery += " ORDER BY ZB2.ZB2_COD "
 
+Return PreparaQry( cQuery, aParams )
+
+/*/{Protheus.doc} PreparaQry
+	Preenche os "?" da query com os parâmetros (FWPreparedStatement)
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 27/11/2026
+
+	@param cQuery, character, Query com "?"
+	@param aParams, array, Valores na ordem dos "?" (data ou caractere)
+
+	@return character, Query com os parâmetros aplicados
+/*/
+Static Function PreparaQry( cQuery as character, aParams as array ) as character
+
+	Local oStmt := FWPreparedStatement():New() as object
+	Local nI    as integer
+
 	oStmt:SetQuery( cQuery )
 
 	For nI := 1 To Len( aParams )
@@ -371,7 +461,24 @@ Static Function QryResumo( cFiltro as character, aParams as array )
 
 Return oStmt:GetFixQuery()
 
-Static Function FiltraDetalhe( oBrowseRes as object, aResumo as array, oBrowseDet as object, aDetalhe as array, aDetTodos as array )
+/*/{Protheus.doc} FiltraDetalhe
+	Filtra o detalhe pela definição selecionada no resumo
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 17/11/2026
+
+	@param oBrowseRes, object, Browse de resumo
+	@param aResumo, array, Dados do resumo
+	@param oBrowseDet, object, Browse de detalhe
+	@param aDetalhe, array, Detalhe filtrado (preenchido aqui)
+	@param aDetTodos, array, Detalhe de todas as definições
+
+	@return logical, sempre .T.
+/*/
+Static Function FiltraDetalhe( oBrowseRes as object, aResumo as array, oBrowseDet as object, aDetalhe as array, aDetTodos as array ) as logical
 
 	Local cCod as character
 	Local nI   as integer
@@ -397,9 +504,21 @@ Static Function FiltraDetalhe( oBrowseRes as object, aResumo as array, oBrowseDe
 
 Return .T.
 
+/*/{Protheus.doc} Visualizar
+	Abre o orçamento da linha selecionada no detalhe (ZORCA04 em visualização)
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 17/11/2026
+
+	@param aDetalhe, array, Detalhe filtrado
+	@param oBrowseDet, object, Browse de detalhe
+/*/
 Static Function Visualizar( aDetalhe as array, oBrowseDet as object )
 
-	Local aArea   := GetArea()
+	Local aArea   := GetArea() as array
 	Local aFields as array
 	Local cChave  as character
 
@@ -421,6 +540,25 @@ Static Function Visualizar( aDetalhe as array, oBrowseDet as object )
 
 Return
 
+/*/{Protheus.doc} ExportExcel
+	Gera a planilha (abas Resumo e Detalhe) e copia para a
+	pasta temporária da máquina do usuário
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 26/11/2026
+
+	@param aResumo, array, Dados do resumo
+	@param aDetTodos, array, Detalhe de todas as definições
+	@param cDef, character, Filtro de definição
+	@param cArea, character, Filtro de área
+	@param cCli, character, Filtro de cliente
+	@param dDateIni, date, Data inicial
+	@param dDateFin, date, Data final
+	@param lAprov, logical, Somente aprovados
+/*/
 Static Function ExportExcel( aResumo as array, aDetTodos as array, cDef as character, cArea as character, cCli as character, dDateIni as date, dDateFin as date, lAprov as logical )
 
 	Local oXlsx    := FwPrinterXlsx():New() as object
@@ -467,7 +605,12 @@ Static Function ExportExcel( aResumo as array, aDetTodos as array, cDef as chara
 	oXlsx:SetFont( cFonte, 10, .F., .F., .F. )
 	For nI := 1 To Len( aResumo )
 		nLin := nI + 2
-		oXlsx:SetCellsFormat( cHorEsq, cVertCen, .F., 0, "000000", IIf( nI % 2 == 0, "E9EEF4", "FFFFFF" ), "" )
+
+		If nI % 2 == 0
+			oXlsx:SetCellsFormat( cHorEsq, cVertCen, .F., 0, "000000", "E9EEF4", "" )
+		Else
+			oXlsx:SetCellsFormat( cHorEsq, cVertCen, .F., 0, "000000", "FFFFFF", "" )
+		EndIf
 
 		aLinha := { AllTrim( aResumo[nI,1] ), aResumo[nI,2], aResumo[nI,3], aResumo[nI,4], aResumo[nI,5], ;
 			AllTrim( Transform( aResumo[nI,6], "@E 999.99" ) ) + " %", ;
@@ -507,7 +650,12 @@ Static Function ExportExcel( aResumo as array, aDetTodos as array, cDef as chara
 	oXlsx:SetFont( cFonte, 10, .F., .F., .F. )
 	For nI := 1 To Len( aDetTodos )
 		nLin := nI + 2
-		oXlsx:SetCellsFormat( cHorEsq, cVertCen, .F., 0, "000000", IIf( nI % 2 == 0, "E9EEF4", "FFFFFF" ), "" )
+
+		If nI % 2 == 0
+			oXlsx:SetCellsFormat( cHorEsq, cVertCen, .F., 0, "000000", "E9EEF4", "" )
+		Else
+			oXlsx:SetCellsFormat( cHorEsq, cVertCen, .F., 0, "000000", "FFFFFF", "" )
+		EndIf
 
 		aLinha := { AllTrim( aDetTodos[nI,6] ), AllTrim( aDetTodos[nI,1] ), AllTrim( aDetTodos[nI,2] ), ;
 			AllTrim( aDetTodos[nI,3] ), AllTrim( aDetTodos[nI,4] ), aDetTodos[nI,5] }
@@ -532,22 +680,56 @@ Return
 /*/{Protheus.doc} DescFiltros
 	Monta o texto dos filtros usados, para o título das tabelas da planilha
 
-    @author igor seberino
+	@type static function
 
-    @type function
+	@author igor.seberino
 
-    @since 25/11/2026
+	@since 25/11/2026
+
+	@param cDef, character, Filtro de definição
+	@param cArea, character, Filtro de área
+	@param cCli, character, Filtro de cliente
+	@param dDateIni, date, Data inicial
+	@param dDateFin, date, Data final
+	@param lAprov, logical, Somente aprovados
+
+	@return character, Texto dos filtros
 /*/
-Static Function DescFiltros( cDef as character, cArea as character, cCli as character, dDateIni as date, dDateFin as date, lAprov as logical )
+Static Function DescFiltros( cDef as character, cArea as character, cCli as character, dDateIni as date, dDateFin as date, lAprov as logical ) as character
 
 	Local cTexto as character
+	Local cIni   := "..." as character
+	Local cFin   := "..." as character
 
-	cTexto := "Definição: " + IIf( Empty( cDef ), "todas", AllTrim( cDef ) )
-	cTexto += " | Área: " + IIf( Empty( cArea ), "todas", AllTrim( cArea ) )
-	cTexto += " | Cliente: " + IIf( Empty( cCli ), "todos", AllTrim( cCli ) )
+	If Empty(cDef)
+		cTexto := "Definição: todas"
+	Else
+		cTexto := "Definição: " + AllTrim( cDef )
+	EndIf
+
+	If Empty(cArea)
+		cTexto += " | Área: todas"
+	Else
+		cTexto += " | Área: " + AllTrim( cArea )
+	EndIf
+
+	If Empty(cCli)
+		cTexto += " | Cliente: todos"
+	Else
+		cTexto += " | Cliente: " + AllTrim( cCli )
+	EndIf
 
 	If !Empty( dDateIni ) .Or. !Empty( dDateFin )
-		cTexto += " | Período: " + IIf( Empty( dDateIni ), "...", DtoC( dDateIni ) ) + " a " + IIf( Empty( dDateFin ), "...", DtoC( dDateFin ) )
+
+		If !Empty( dDateIni )
+			cIni := DtoC( dDateIni )
+		EndIf
+
+		If !Empty( dDateFin )
+			cFin := DtoC( dDateFin )
+		EndIf
+
+		cTexto += " | Período: " + cIni + " a " + cFin
 	EndIf
 
 	If lAprov
@@ -560,13 +742,17 @@ Return cTexto
 	Monta o nome do arquivo com a Definição e a data da geração
 	Ex.: consulta_historica_def002_20261125.xlsx
 
-    @author igor seberino
+	@type static function
 
-    @type function
+	@author igor.seberino
 
-    @since 25/11/2026
+	@since 25/11/2026
+
+	@param cDef, character, Filtro de definição
+
+	@return character, Nome do arquivo .xlsx
 /*/
-Static Function NomeArquivo( cDef as character )
+Static Function NomeArquivo( cDef as character ) as character
 
 	Local cNome := "consulta_historica" as character
 
@@ -577,3 +763,28 @@ Static Function NomeArquivo( cDef as character )
 	cNome += "_" + DtoS( Date() ) + ".xlsx"
 
 Return cNome
+
+/*/{Protheus.doc} VldPeriodo
+	Valida se a data inicial não é maior que a final.
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 26/11/2026
+
+	@param dIni, date, Data inicial
+	@param dFin, date, Data final
+
+	@return logical, .T. se o período é válido
+/*/
+Static Function VldPeriodo( dIni as date, dFin as date ) as logical
+
+	Local lOk := .T. as logical
+
+	If !Empty( dIni ) .And. !Empty( dFin ) .And. dIni > dFin
+		Help( , , "HELP", , "Data inicial maior que a final", 1, 0 )
+		lOk := .F.
+	EndIf
+
+Return lOk

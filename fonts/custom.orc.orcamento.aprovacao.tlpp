@@ -5,29 +5,60 @@
 namespace custom.orc.orcamento.aprovacao
 using namespace custom.orc.utils
 
-User Function ZORCA05( cAction as character )
+/*/{Protheus.doc} ZORCA05
+	Fluxo de status do orçamento: envio, aprovação/reprovação,
+	novo rascunho e estorno (chamado pelo menu do ZORCA04)
 
-	Local oModal := FWDialogModal():New()
-	Local oPanel := oModal:GetPanelMain()
+	@type user function
+
+	@author igor.seberino
+
+	@since 05/11/2026
+
+	@param cAction, character, Ação: APR = Aprovar, ENV = Enviar, NOV = Novo rascunho, EST = Estornar
+
+	@return logical, sempre .T.
+/*/
+User Function ZORCA05( cAction as character ) as logical
+
+	Local oModal := FWDialogModal():New() as object
+	Local oPanel := oModal:GetPanelMain() as object
 
 	Do Case
 	Case cAction == 'APR'
-		U_Revisar( oModal, oPanel )
+		Revisar( oModal, oPanel )
 	Case cAction == 'ENV'
-		U_Envio( oModal, oPanel )
+		Envio( oModal, oPanel )
 	Case cAction == 'NOV'
-		U_NovoRascunho( oModal, oPanel )
+		NovoRascunho( oModal, oPanel )
 	Case cAction == 'EST'
-		U_Estornar( oModal, oPanel )
+		Estornar( oModal, oPanel )
 	EndCase
 
 Return .T.
 
-User Function MontaTela( oModal as object, oPanel as object, cAction as character, cObs as character )
+/*/{Protheus.doc} MontaTela
+	Monta o diálogo de confirmação de cada ação, com os dados
+	do orçamento posicionado
 
-	Local bCode as CodeBlock
+	@type static function
+
+	@author igor.seberino
+
+	@since 05/11/2026
+
+	@param oModal, object, Diálogo (FWDialogModal)
+	@param oPanel, object, Painel principal do diálogo
+	@param cAction, character, Ação (APR, ENV, NOV, EST)
+	@param cObs, character, Observação digitada (por referência)
+
+	@return numeric, Opção confirmada (APR: 1 = Aprovar, 2 = Reprovar; demais: 2). 0 = cancelado
+/*/
+Static Function MontaTela( oModal as object, oPanel as object, cAction as character, cObs as character ) as numeric
+
+	Local bCode  as codeblock
 	Local nOpcao as numeric
-	Local nRet
+	Local nRet   := 0 as numeric
 
 	Local cTextHtml := '<hr size="1">'+;
 		' <font size="2" ><b>ORÇAMENTO: </b> ' + ZB4->ZB4_COD + ' / ' + ZB4->ZB4_REV + ' </font> ' +;
@@ -36,16 +67,13 @@ User Function MontaTela( oModal as object, oPanel as object, cAction as characte
 		' <font size="2"><b>TICKET: </b> ' + ZB4->ZB4_TICKET +  ' </font> ' +;
 		' <font size="2" > <b> TASK: </b> ' + ZB4->ZB4_TASK +  ' </font><br/><br/>' +;
 		' <font size="2"><b>CRIADO POR: </b> ' + ZB4->ZB4_USRINC +  ' </font> ' +;
-		' <font size="2" > <b> TOTAL: </b> ' + U_NUMTOHOURS( ZB4->ZB4_TTHRNM)  +  ' </font><br/><br/>'
+		' <font size="2" > <b> TOTAL: </b> ' + U_NumToHours( ZB4->ZB4_TTHRNM)  +  ' </font><br/><br/>' as character
 
 	If cAction == "APR"
 
 		cObs   := ""
 		nOpcao := 1
-		bCode := { || ;
-			Iif( nOpcao == 1, (nRet := nOpcao, oModal:DeActivate()), ;  // Se for aprovação
-		Iif( nOpcao == 2 .And. !Empty( AllTrim( cObs ) ), ( nRet:= nOpcao, oModal:DeActivate() ), ; // Se for reprovar e tiver comentário
-		Help( , , "ZORCA05", , "Reprovar exige observação", 1, 0 ) ) ) } // Se for reprovar sem comentário
+		bCode := { || nRet := ConfAprov( nOpcao, cObs, oModal ) }
 
 		oModal:SetEscClose(.T.)
 		oModal:SetTitle("Aprovação do Orçamento")
@@ -80,8 +108,7 @@ User Function MontaTela( oModal as object, oPanel as object, cAction as characte
 	ElseIf cAction == "EST"
 
 		cObs   := ""
-		bCode := { || ;
-			Iif( !Empty(AllTrim( cObs )), ( nRet := 2, oModal:DeActivate() ), Help( , , "ZORCA05", , "Estornar exige observação", 1, 0 ) ) }
+		bCode := { || nRet := ConfEstorno( cObs, oModal ) }
 
 		oModal:SetEscClose(.T.)
 		oModal:SetTitle("Estornar Orçamento")
@@ -94,9 +121,7 @@ User Function MontaTela( oModal as object, oPanel as object, cAction as characte
 
 	EndIf
 
-
 	TSay():New( 015, 010, { || cTextHtml },       oPanel, , , , , , .T., , , 200, 060, , , , , , .T. )
-
 
 	// Botao dentro do painel
 	TButton():New(095, 010, "Visualizar Orçamento", oPanel, {|| FWExecView("Visualizar", FormatStr("VIEWDEF.%c.ZORCA04", NZORCA04), MODEL_OPERATION_VIEW) }, 80, 15, , , , .T.)
@@ -109,13 +134,28 @@ User Function MontaTela( oModal as object, oPanel as object, cAction as characte
 
 Return nRet
 
-User Function Envio( oModal as object, oPanel as object )
+/*/{Protheus.doc} Envio
+	Envia o rascunho para aprovação: valida pelo modelo do ZORCA04,
+	troca o status para Enviado e grava o histórico
 
-	Local lRet as logical
+	@type static function
+
+	@author igor.seberino
+
+	@since 05/11/2026
+
+	@param oModal, object, Diálogo (FWDialogModal)
+	@param oPanel, object, Painel principal do diálogo
+
+	@return logical, .T. se enviou
+/*/
+Static Function Envio( oModal as object, oPanel as object ) as logical
+
+	Local lRet  := .T. as logical
 	Local cErro as character
 
 	// Carrega o modelo de dados
-	Local oModel := FWLoadModel(NZORCA04 + ".U_ZORCA04")
+	Local oModel := FWLoadModel(NZORCA04 + ".U_ZORCA04") as object
 
 	// Verificação extra caso VldActivate() não funcione
 	If ZB4->ZB4_STATUS != STATUS_RASCUNHO
@@ -130,18 +170,18 @@ User Function Envio( oModal as object, oPanel as object )
 	If !oModel:Activate()
 		lRet := .F.
 
-	ElseIf !U_VldEnvio( oModel )
+	ElseIf !VldEnvio( oModel )
 		Help( , , "ZORCA05", , "Cada item do orçamento deve ter pelo menos 1 atividade", 1, 0 )
 
 		lRet := .F.
 
-	ElseIf U_MontaTela( oModal, oPanel, "ENV" ) == 2
+	ElseIf MontaTela( oModal, oPanel, "ENV" ) == 2
 
 		Begin Transaction
 
 			If oModel:SetValue("ZB4MASTER", "ZB4_STATUS", STATUS_ENVIADO) .And. oModel:VldData() .And. oModel:CommitData() //VldData() garante que o modelo passe pelas validações de negócio
 
-				If !U_GravaHist( ACAO_ENVIADO )
+				If !GravaHist( ACAO_ENVIADO )
 					DisarmTransaction()
 					cErro := "Ocorreu um erro ao gravar o histórico"
 				EndIf
@@ -151,14 +191,15 @@ User Function Envio( oModal as object, oPanel as object )
 				cErro := "Ocorreu um erro inesperado"
 			EndIf
 
-
 		End Transaction
 
-		If cErro != ""
+		If !Empty( cErro )
 			Help( , , "ZORCA05", , cErro, 1, 0 )
 			lRet := .F.
 		EndIf
 
+	Else
+		lRet := .F.
 	EndIf
 
 	If oModel:IsActive()
@@ -166,27 +207,42 @@ User Function Envio( oModal as object, oPanel as object )
 		oModel:DeActivate()
 	EndIf
 
-Return .T.
+Return lRet
 
-User Function Revisar( oModal as object, oPanel as object )
+/*/{Protheus.doc} Revisar
+	Aprova ou reprova o orçamento enviado, com lock e releitura
+	do status, e grava o histórico
 
-	Local nOpcao
+	@type static function
+
+	@author igor.seberino
+
+	@since 05/11/2026
+
+	@param oModal, object, Diálogo (FWDialogModal)
+	@param oPanel, object, Painel principal do diálogo
+
+	@return logical, .F. se não pôde abrir a revisão
+/*/
+Static Function Revisar( oModal as object, oPanel as object ) as logical
+
+	Local nOpcao as numeric
 	Local aArea  as array
 	Local cObs   as character
-	Local cErro as character
+	Local cErro  as character
 
 	If ZB4->ZB4_STATUS != STATUS_ENVIADO
 		Help( , , "ZORCA05", , "O orçamento não foi enviado para revisão.", 1, 0 )
 		Return .F.
 	EndIf
 
-	If !U_VldAprovador()
+	If !VldAprovador()
 		Return .F.
 	EndIf
 
-	nOpcao := U_MontaTela( oModal, oPanel, "APR", @cObs )
+	nOpcao := MontaTela( oModal, oPanel, "APR", @cObs )
 
-	If nOpcao != Nil
+	If nOpcao > 0
 
 		aArea := GetArea()
 
@@ -199,13 +255,13 @@ User Function Revisar( oModal as object, oPanel as object )
 					Do Case
 					Case nOpcao == 1
 						ZB4->ZB4_STATUS := STATUS_APROVADO
-						If !U_GravaHist( ACAO_APROVADO, cObs )
+						If !GravaHist( ACAO_APROVADO, cObs )
 							cErro := "Ocorreu um erro ao gravar o histórico"
 							DisarmTransaction()
 						EndIf
 					Case nOpcao == 2
 						ZB4->ZB4_STATUS := STATUS_REPROVADO
-						If !U_GravaHist( ACAO_REPROVADO, cObs )
+						If !GravaHist( ACAO_REPROVADO, cObs )
 							cErro := "Ocorreu um erro ao gravar o histórico"
 							DisarmTransaction()
 						EndIf
@@ -228,7 +284,7 @@ User Function Revisar( oModal as object, oPanel as object )
 
 		End Transaction
 
-		If cErro != ""
+		If !Empty( cErro )
 			Help( , , "ZORCA05", , cErro, 1, 0 )
 		EndIf
 
@@ -236,17 +292,31 @@ User Function Revisar( oModal as object, oPanel as object )
 
 	EndIf
 
-
 Return .T.
 
-User Function NovoRascunho( oModal as object, oPanel as object )
+/*/{Protheus.doc} NovoRascunho
+	Gera a próxima revisão (rascunho) de um orçamento já revisado,
+	abrindo o ZORCA04 em inclusão com os dados copiados
 
-	Local oModel := FWLoadModel(NZORCA04 + ".U_ZORCA04")
-	Local nOpcao
-	Local cCod := ZB4->ZB4_COD
-	Local cRev := StrZero( (Val(ZB4->ZB4_REV) + 1), 2 )
-	Local cQuery := U_QuerySet( "ZB4", {"ZB4_COD"}, { {"ZB4_COD = ", cCod}, {"ZB4_REV = ", cRev} } )
-	Local cAliasQry := MPSysOpenQuery(cQuery)
+	@type static function
+
+	@author igor.seberino
+
+	@since 05/11/2026
+
+	@param oModal, object, Diálogo (FWDialogModal)
+	@param oPanel, object, Painel principal do diálogo
+
+	@return logical, .F. se não pôde gerar a revisão
+/*/
+Static Function NovoRascunho( oModal as object, oPanel as object ) as logical
+
+	Local oModel    := FWLoadModel(NZORCA04 + ".U_ZORCA04") as object
+	Local nOpcao    as numeric
+	Local cCod      := ZB4->ZB4_COD as character
+	Local cRev      := StrZero( (Val(ZB4->ZB4_REV) + 1), 2 ) as character
+	Local cQuery    := U_QuerySet( "ZB4", {"ZB4_COD"}, { {"ZB4_COD = ", cCod}, {"ZB4_REV = ", cRev} } ) as character
+	Local cAliasQry := MPSysOpenQuery(cQuery) as character
 
 	If ZB4->ZB4_STATUS != STATUS_APROVADO .And. ZB4->ZB4_STATUS != STATUS_REPROVADO
 		Help( , , "ZORCA05", , "O orçamento precisa ter sido revisado para abrir um novo rascunho.", 1, 0 )
@@ -260,9 +330,9 @@ User Function NovoRascunho( oModal as object, oPanel as object )
 
 	(cAliasQry)->(dbCloseArea())
 
-	nOpcao := U_MontaTela( oModal, oPanel, "NOV" )
+	nOpcao := MontaTela( oModal, oPanel, "NOV" )
 
-	If nOpcao != Nil
+	If nOpcao > 0
 
 		oModel:SetOperation(MODEL_OPERATION_INSERT)
 
@@ -284,28 +354,42 @@ User Function NovoRascunho( oModal as object, oPanel as object )
 
 	EndIf
 
-
 Return .T.
 
-User Function Estornar( oModal as object, oPanel as object )
+/*/{Protheus.doc} Estornar
+	Estorna a aprovação: volta o orçamento para Enviado, limpa os
+	dados de aprovação e grava o histórico
 
-	Local nOpcao
+	@type static function
+
+	@author igor.seberino
+
+	@since 05/11/2026
+
+	@param oModal, object, Diálogo (FWDialogModal)
+	@param oPanel, object, Painel principal do diálogo
+
+	@return logical, .F. se não pôde estornar
+/*/
+Static Function Estornar( oModal as object, oPanel as object ) as logical
+
+	Local nOpcao as numeric
 	Local aArea  as array
 	Local cObs   as character
-	Local cErro as character
+	Local cErro  as character
 
 	If ZB4->ZB4_STATUS != STATUS_APROVADO
 		Help( , , "ZORCA05", , "O orçamento só pode ser estornado após aprovação.", 1, 0 )
 		Return .F.
 	EndIf
 
-	If !U_VldAprovador() .Or. !VldRevisao( ZB4->ZB4_COD, ZB4->ZB4_REV )
+	If !VldAprovador() .Or. !VldRevisao( ZB4->ZB4_COD, ZB4->ZB4_REV )
 		Return .F.
 	EndIf
 
-	nOpcao := U_MontaTela( oModal, oPanel, "EST", @cObs )
+	nOpcao := MontaTela( oModal, oPanel, "EST", @cObs )
 
-	If nOpcao != Nil
+	If nOpcao > 0
 
 		aArea := GetArea()
 
@@ -320,7 +404,7 @@ User Function Estornar( oModal as object, oPanel as object )
 					ZB4->ZB4_DTAPR  := CtoD("")
 					ZB4->ZB4_HRAPR  := ""
 
-					If !U_GravaHist( ACAO_ESTORNADO, cObs )
+					If !GravaHist( ACAO_ESTORNADO, cObs )
 						cErro := "Ocorreu um erro ao gravar o histórico"
 						DisarmTransaction()
 					EndIf
@@ -340,7 +424,7 @@ User Function Estornar( oModal as object, oPanel as object )
 
 		End Transaction
 
-		If cErro != ""
+		If !Empty( cErro )
 			Help( , , "ZORCA05", , cErro, 1, 0 )
 		EndIf
 
@@ -350,14 +434,27 @@ User Function Estornar( oModal as object, oPanel as object )
 
 Return .T.
 
-User Function VldEnvio( oModel as object )
+/*/{Protheus.doc} VldEnvio
+	Valida se cada item (ZB5) do orçamento tem pelo menos
+	uma atividade (ZB6)
 
-	Local oModelZB5 := oModel:GetModel("ZB5DETAIL")
-	Local oModelZB6 := oModel:GetModel("ZB6DETAIL")
-	Local n1 as numeric
-	Local n2 as numeric
+	@type static function
 
-	Local lRet := .T.
+	@author igor.seberino
+
+	@since 05/11/2026
+
+	@param oModel, object, Modelo ZORCA04M ativo
+
+	@return logical, .T. se todos os itens têm atividade
+/*/
+Static Function VldEnvio( oModel as object ) as logical
+
+	Local oModelZB5 := oModel:GetModel("ZB5DETAIL") as object
+	Local oModelZB6 := oModel:GetModel("ZB6DETAIL") as object
+	Local n1        as numeric
+	Local n2        as numeric
+	Local lRet      := .T. as logical
 
 	For n1 := 1 to oModelZB5:Length()
 
@@ -370,7 +467,7 @@ User Function VldEnvio( oModel as object )
 				oModelZB6:GoLine(n2)
 
 				If !oModelZB6:IsDeleted(n2) .And. !oModelZB6:IsEmpty()
-					exit
+					Exit
 				ElseIf n2 == oModelZB6:Length()
 					lRet := .F.
 				EndIf
@@ -380,14 +477,29 @@ User Function VldEnvio( oModel as object )
 
 Return lRet
 
-User Function GravaHist(  cAcao as character, cObs as character )
+/*/{Protheus.doc} GravaHist
+	Grava uma linha do histórico (ZB7) para o orçamento posicionado
+	e, na aprovação/estorno, os dados de aprovação da ZB4
 
-	Local aArea := GetArea()
-	Local lRet := .F.
-	Local cSeq := "001"
-	Local cQuery    := U_QuerySet( "ZB7", { "MAX(ZB7_SEQ) ZB7_SEQ" }, { {"ZB7_COD = ", ZB4->ZB4_COD}, {"ZB7_REV = ", ZB4->ZB4_REV} } )
-	Local cAliasQry := MPSysOpenQuery( cQuery )
-	Local cUser as character
+	@type static function
+
+	@author igor.seberino
+
+	@since 05/11/2026
+
+	@param cAcao, character, Ação do histórico (ACAO_*)
+	@param cObs, character, Observação
+
+	@return logical, .T. se gravou
+/*/
+Static Function GravaHist( cAcao as character, cObs as character ) as logical
+
+	Local aArea     := GetArea() as array
+	Local lRet      := .F. as logical
+	Local cSeq      := "001" as character
+	Local cQuery    := U_QuerySet( "ZB7", { "MAX(ZB7_SEQ) ZB7_SEQ" }, { {"ZB7_COD = ", ZB4->ZB4_COD}, {"ZB7_REV = ", ZB4->ZB4_REV} } ) as character
+	Local cAliasQry := MPSysOpenQuery( cQuery ) as character
+	Local cUser     as character
 
 	If !(cAliasQry)->(EoF())
 		cSeq := StrZero(Val((cAliasQry)->ZB7_SEQ) + 1, 3)
@@ -427,32 +539,53 @@ User Function GravaHist(  cAcao as character, cObs as character )
 
 Return lRet
 
-User Function VldAprovador()
+/*/{Protheus.doc} VldAprovador
+	Valida se o usuário logado é aprovador ativo e se não é
+	o criador do orçamento posicionado
 
-	Local lRet := .T.
-	Local cUser := RetCodUsr()
-	Local cQuery := U_QuerySet( "ZB3", {"ZB3_ATIVO"}, { {"ZB3_USER = ", cUser} } )
-	Local cAliasQry := MPSysOpenQuery(cQuery)
+	@type static function
 
-	If !(cAliasQry)->(EoF()) .And. (cAliasQry)->ZB3_ATIVO == ATIVO_SIM
-		If ZB4->ZB4_STATUS != STATUS_RASCUNHO .And. cUser == ZB4->ZB4_USRINC
-			Help( , , "ZORCA05", , "Aprovador deve ser diferente do criador.", 1, 0 )
-			lRet := .F.
-		EndIf
-	Else
+	@author igor.seberino
+
+	@since 06/11/2026
+
+	@return logical, .T. se pode aprovar/estornar
+/*/
+Static Function VldAprovador() as logical
+
+	Local lRet  := .T. as logical
+	Local cUser := RetCodUsr() as character
+
+	If !U_IsAprovador( cUser )
 		Help( , , "ZORCA05", , "Usuário não é aprovador ativo.", 1, 0 )
+		lRet := .F.
+	ElseIf ZB4->ZB4_STATUS != STATUS_RASCUNHO .And. cUser == ZB4->ZB4_USRINC
+		Help( , , "ZORCA05", , "Aprovador deve ser diferente do criador.", 1, 0 )
 		lRet := .F.
 	EndIf
 
-	(cAliasQry)->(dbCloseArea())
-
 Return lRet
 
-Static Function vldRevisao( cCod as character, cRev as character ) as logical
+/*/{Protheus.doc} VldRevisao
+	Valida se o orçamento não tem revisão mais recente
+	(só a última revisão pode ser estornada)
 
-	Local cQuery    := U_QuerySet( "ZB4", { "ZB4_REV" }, { { "ZB4_COD = ", cCod }, { "ZB4_REV > ", cRev } } )
-	Local cAliasQry := MPSysOpenQuery( cQuery )
-	Local lRet      := (cAliasQry)->( EoF() )
+	@type static function
+
+	@author igor.seberino
+
+	@since 25/11/2026
+
+	@param cCod, character, Código do orçamento
+	@param cRev, character, Revisão posicionada
+
+	@return logical, .T. se é a revisão mais recente
+/*/
+Static Function VldRevisao( cCod as character, cRev as character ) as logical
+
+	Local cQuery    := U_QuerySet( "ZB4", { "ZB4_REV" }, { { "ZB4_COD = ", cCod }, { "ZB4_REV > ", cRev } } ) as character
+	Local cAliasQry := MPSysOpenQuery( cQuery ) as character
+	Local lRet      := (cAliasQry)->( EoF() ) as logical
 
 	If !lRet
 		Help( , , "ZORCA05", , "Orçamento possui revisao mais recente", 1, 0 )
@@ -461,3 +594,58 @@ Static Function vldRevisao( cCod as character, cRev as character ) as logical
 	(cAliasQry)->( dbCloseArea() )
 
 Return lRet
+
+/*/{Protheus.doc} ConfAprov
+	Confirma a aprovação/reprovação. Reprovar exige observação.
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 26/11/2026
+
+	@param nOpcao, numeric, 1 = Aprovar, 2 = Reprovar
+	@param cObs, character, Observação digitada
+	@param oModal, object, Diálogo fechado quando a confirmação é válida
+
+	@return numeric, nOpcao se confirmou, 0 se não
+/*/
+Static Function ConfAprov( nOpcao as numeric, cObs as character, oModal as object ) as numeric
+
+	Local nRet := 0 as numeric
+
+	If nOpcao == 2 .And. Empty( AllTrim( cObs ) )
+		Help( , , "ZORCA05", , "Reprovar exige observação", 1, 0 )
+	Else
+		nRet := nOpcao
+		oModal:DeActivate()
+	EndIf
+
+Return nRet
+
+/*/{Protheus.doc} ConfEstorno
+	Confirma o estorno. Estornar exige observação.
+
+	@type static function
+
+	@author igor.seberino
+
+	@since 26/11/2026
+
+	@param cObs, character, Observação digitada
+	@param oModal, object, Diálogo fechado quando a confirmação é válida
+
+	@return numeric, 2 se confirmou, 0 se não
+/*/
+Static Function ConfEstorno( cObs as character, oModal as object ) as numeric
+
+	Local nRet := 0 as numeric
+
+	If Empty( AllTrim( cObs ) )
+		Help( , , "ZORCA05", , "Estornar exige observação", 1, 0 )
+	Else
+		nRet := 2
+		oModal:DeActivate()
+	EndIf
+
+Return nRet
