@@ -45,6 +45,8 @@ User Function ModelDef() as object
 	Local oStruZB2 := FWFormStruct(1, "ZB2") as object
 	Local oStruZB5  := FWFormStruct( 1, "ZB5" ) as object
 
+	oStruZB5:AddField( "Orçamento", "Orçamento", "ZB5_ORC", "C", TamSX3("ZB5_COD")[1] + 1 + TamSX3("ZB5_REV")[1], 0, , , , .F., { || ZB5->ZB5_COD + "/" + ZB5->ZB5_REV }, , , .T. )
+
 	oModel:AddFields("ZB2MASTER", /*cOwner*/, oStruZB2)
 	oModel:AddGrid(   "ZB5DETAIL", "ZB2MASTER", oStruZB5 )
 
@@ -63,6 +65,9 @@ User Function ModelDef() as object
 	oModel:GetModel(  'ZB5DETAIL' ):SetNoInsertLine( .T. )
 	oModel:GetModel(  'ZB5DETAIL' ):SetNoUpdateLine( .T. )
 	oModel:GetModel(  'ZB5DETAIL' ):SetNoDeleteLine( .T. )
+
+	oModel:SetVldActivate( { |oModel| ;
+		oModel:GetModel("ZB5DETAIL"):SetLoadFilter( , IIf( Type("cFiltroZB5") == "C", cFiltroZB5, "" ) ), .T. } )
 
 Return oModel
 
@@ -87,13 +92,16 @@ User Function ViewDef() as object
 	oView:SetModel( oModel )
 	oView:AddField( 'VIEW_ZB2', oStruZB2, 'ZB2MASTER' )
 	oView:AddGrid(  'VIEW_ZB5', oStruZB5, 'ZB5DETAIL' )
-	
+
+	oView:AddOtherObject( "VIEW_FILTRO", { |oPanel| U_CriaFiltroAprov(oPanel, oView) } )
+
 	oStruZB5:RemoveField("ZB5_COD")
 	oStruZB5:RemoveField("ZB5_REV")
 	oStruZB5:RemoveField("ZB5_TTHRNM")
 	oStruZB5:RemoveField("ZB5_AREA")
 	oStruZB5:RemoveField("ZB5_DESDEF")
 	oStruZB5:RemoveField("ZB5_DEFIN")
+	oStruZB5:AddField( "ZB5_ORC", "01", "Orçamento", "Orçamento", , "C", "@!" )
 
 	oView:CreateHorizontalBox( 'DEF', 20 )
 	oView:CreateHorizontalBox( 'ITEM', 80 )
@@ -101,10 +109,12 @@ User Function ViewDef() as object
 	oView:CreateFolder( 'FOLDER', 'ITEM' )
 	oView:AddSheet( 'FOLDER', 'ITENS', 'Itens' )
 
-	oView:CreateHorizontalBox( 'BOX_ZB5', 100, , ,  'FOLDER', 'ITENS' )
+	oView:CreateHorizontalBox( 'BOX_FILTRO', 10, , , 'FOLDER', 'ITENS' )
+	oView:CreateHorizontalBox( 'BOX_ZB5',    90, , , 'FOLDER', 'ITENS' )
 
-	oView:SetOwnerView( 'VIEW_ZB2', 'DEF' )
-	oView:SetOwnerView( 'VIEW_ZB5', 'BOX_ZB5' )
+	oView:SetOwnerView( 'VIEW_ZB2',    'DEF' )
+	oView:SetOwnerView( 'VIEW_ZB5',    'BOX_ZB5' )
+	oView:SetOwnerView( 'VIEW_FILTRO', 'BOX_FILTRO' )
 
 	oView:AddUserButton( "Visualizar orçamento", "", { |oView| U_ViewOrcamento(oView) }, "Visualiza o orçamento do item" )
 

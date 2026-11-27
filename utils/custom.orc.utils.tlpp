@@ -605,3 +605,37 @@ User Function ViewOrcamento( oView as object )
 
 Return
 
+User Function CriaFiltroAprov( oPanel as object, oView as object )
+
+	Local lSoAprov := .F. as logical
+
+	TCheckBox():New( 5, 5, "Apenas aprovados", ;
+		{ |lNew| If( PCount() > 0, lSoAprov := lNew, lSoAprov ) }, ;
+		oPanel, 100, 10, , ;
+		{ || U_FiltraAprovados(oView, lSoAprov) }, , , , , , .T. )
+
+Return
+
+User Function FiltraAprovados( oView as object, lSoAprov as logical )
+
+	Local   oModel     := oView:GetModel() as object
+	Local   nOper      := oModel:GetOperation() as numeric
+	Local   cFiltro    := "" as character
+	Private cFiltroZB5 := "" as character
+
+	If lSoAprov
+		cFiltro := "EXISTS ( SELECT 1 FROM " + RetSqlName("ZB4") + " ZB4" + ;
+			" WHERE ZB4.ZB4_FILIAL = '" + FWxFilial("ZB4") + "'" + ;
+			" AND ZB4.ZB4_COD = ZB5_COD AND ZB4.ZB4_REV = ZB5_REV" + ;
+			" AND ZB4.ZB4_STATUS = '" + STATUS_APROVADO + "'" + ;
+			" AND ZB4.D_E_L_E_T_ = ' ' )"
+	EndIf
+
+	cFiltroZB5 := cFiltro
+
+	oModel:DeActivate()
+	oModel:SetOperation( nOper )
+	oModel:Activate()
+	oView:Refresh()
+
+Return
